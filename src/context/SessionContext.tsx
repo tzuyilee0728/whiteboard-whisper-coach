@@ -131,26 +131,28 @@ export const SessionProvider: React.FC<SessionProviderProps> = ({ children }) =>
     setAudioRecordings(prev => [...prev, recording]);
   };
 
+  const contextValue = {
+    challenges,
+    sessions,
+    currentChallenge,
+    currentSession,
+    currentSection,
+    isRecording,
+    recordingTime,
+    sectionProgress,
+    audioRecordings,
+    selectChallenge,
+    startSession,
+    endSession,
+    setCurrentSection,
+    startRecording,
+    stopRecording,
+    updateSectionProgress,
+    addRecording
+  };
+
   return (
-    <SessionContext.Provider value={{
-      challenges,
-      sessions,
-      currentChallenge,
-      currentSession,
-      currentSection,
-      isRecording,
-      recordingTime,
-      sectionProgress,
-      audioRecordings,
-      selectChallenge,
-      startSession,
-      endSession,
-      setCurrentSection,
-      startRecording,
-      stopRecording,
-      updateSectionProgress,
-      addRecording
-    }}>
+    <SessionContext.Provider value={contextValue}>
       {children}
     </SessionContext.Provider>
   );
