@@ -24,8 +24,10 @@ interface SessionContextType {
   addRecording: (recording: AudioRecording) => void;
 }
 
+// Create context with undefined as default value
 const SessionContext = createContext<SessionContextType | undefined>(undefined);
 
+// Custom hook to use the session context
 export const useSession = () => {
   const context = useContext(SessionContext);
   if (!context) {
@@ -39,6 +41,7 @@ interface SessionProviderProps {
 }
 
 export const SessionProvider: React.FC<SessionProviderProps> = ({ children }) => {
+  // All useState hooks at the component level
   const [challenges] = useState<Challenge[]>(mockChallenges);
   const [sessions, setSessions] = useState<Session[]>(mockSessions);
   const [currentChallenge, setCurrentChallenge] = useState<Challenge | null>(null);
@@ -55,6 +58,7 @@ export const SessionProvider: React.FC<SessionProviderProps> = ({ children }) =>
     wireframing: 0
   });
 
+  // Handler functions
   const selectChallenge = (challengeId: string) => {
     const challenge = challenges.find(c => c.id === challengeId);
     if (challenge) {
@@ -131,6 +135,7 @@ export const SessionProvider: React.FC<SessionProviderProps> = ({ children }) =>
     setAudioRecordings(prev => [...prev, recording]);
   };
 
+  // Create a stable context value object
   const contextValue = {
     challenges,
     sessions,
@@ -151,6 +156,7 @@ export const SessionProvider: React.FC<SessionProviderProps> = ({ children }) =>
     addRecording
   };
 
+  // Return the provider with the context value
   return (
     <SessionContext.Provider value={contextValue}>
       {children}
