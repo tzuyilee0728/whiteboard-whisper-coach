@@ -60,11 +60,12 @@ export function useSessionControls() {
     }
   }, [currentSection, sections, setCurrentSection]);
 
-  // Handle timer logic
+  // Handle timer logic - now responsive to recording state
   useEffect(() => {
     let interval: number | undefined;
     
-    if (currentSession && !isPaused) {
+    // Only run timer when recording is active and session is not paused
+    if (currentSession && !isPaused && isRecording) {
       interval = window.setInterval(() => {
         setTotalTime(prev => prev + 1);
         setSectionTime(prev => prev + 1);
@@ -80,7 +81,7 @@ export function useSessionControls() {
     return () => {
       if (interval) clearInterval(interval);
     };
-  }, [currentSession, isPaused, currentSection, sectionTime, handleNextSection]);
+  }, [currentSession, isPaused, currentSection, sectionTime, handleNextSection, isRecording]);
   
   // Handle auto-recording when session starts
   useEffect(() => {
@@ -148,6 +149,7 @@ export function useSessionControls() {
     sections,
     totalTime,
     isPaused,
+    isRecording,
     handleStartSession,
     handleEndSession,
     handleNextSection,

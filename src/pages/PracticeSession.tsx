@@ -17,6 +17,7 @@ const PracticeSession = () => {
     sections,
     totalTime,
     isPaused,
+    isRecording,
     handleStartSession,
     handleEndSession,
     handleNextSection,
@@ -49,6 +50,7 @@ const PracticeSession = () => {
               description={currentChallenge?.description || ''}
               totalTime={totalTime}
               isPaused={isPaused}
+              isRecording={isRecording}
               handlePauseResumeSession={handlePauseResumeSession}
               handleEndSession={handleEndSession}
             />

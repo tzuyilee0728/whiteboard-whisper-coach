@@ -9,6 +9,7 @@ interface SessionHeaderProps {
   description: string;
   totalTime: number;
   isPaused: boolean;
+  isRecording: boolean;  // Added this prop
   handlePauseResumeSession: () => void;
   handleEndSession: () => void;
 }
@@ -18,6 +19,7 @@ const SessionHeader: React.FC<SessionHeaderProps> = ({
   description,
   totalTime,
   isPaused,
+  isRecording,  // Using the new prop
   handlePauseResumeSession,
   handleEndSession
 }) => {
@@ -27,6 +29,9 @@ const SessionHeader: React.FC<SessionHeaderProps> = ({
     const secs = seconds % 60;
     return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
   };
+  
+  // Timer is paused either when manually paused or when recording is stopped
+  const timerPaused = isPaused || !isRecording;
   
   return (
     <div className="flex flex-col md:flex-row justify-between gap-4 mb-6">
@@ -41,7 +46,7 @@ const SessionHeader: React.FC<SessionHeaderProps> = ({
         <CardContent className="flex items-center justify-between gap-4 pt-6">
           <div>
             <div className="text-sm text-gray-500">Total Time</div>
-            <div className={`timer-text ${isPaused ? 'text-amber-500' : ''}`}>
+            <div className={`timer-text ${timerPaused ? 'text-amber-500' : ''}`}>
               {formatTime(totalTime)}
             </div>
           </div>
@@ -53,7 +58,7 @@ const SessionHeader: React.FC<SessionHeaderProps> = ({
               size="sm"
               className="flex items-center gap-1"
             >
-              {isPaused ? (
+              {timerPaused ? (
                 <>
                   <PlayCircle className="h-4 w-4" />
                   Resume
