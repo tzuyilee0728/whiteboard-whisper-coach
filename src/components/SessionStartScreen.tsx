@@ -78,7 +78,6 @@ const SessionStartScreen: React.FC<SessionStartScreenProps> = ({ handleStartSess
               {currentChallenge && (
                 <div className="mt-6 border-t pt-4">
                   <h3 className="font-semibold text-lg mb-2">{currentChallenge.title}</h3>
-                  <p className="text-gray-700 mb-4">{currentChallenge.description}</p>
                   
                   <div className="bg-blue-50 rounded-md p-4 mb-6">
                     <AlertTitle className="flex items-center text-blue-800 mb-2">
