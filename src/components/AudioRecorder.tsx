@@ -21,16 +21,6 @@ const AudioRecorder = () => {
     return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
   };
   
-  // Recording is controlled by session state
-  const handleRecordToggle = () => {
-    if (isRecording) {
-      stopRecording();
-      // Timer will stay stopped until recording is resumed
-    } else {
-      startRecording();
-    }
-  };
-  
   return (
     <Card>
       <CardHeader className="pb-2">
@@ -59,7 +49,7 @@ const AudioRecorder = () => {
           </div>
           
           <Button
-            onClick={handleRecordToggle}
+            onClick={isRecording ? stopRecording : startRecording}
             variant={isRecording ? "destructive" : "default"}
             className={`w-full ${!isRecording ? 'bg-brand-600 hover:bg-brand-700' : ''}`}
             disabled={!currentSession}

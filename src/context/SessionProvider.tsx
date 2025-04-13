@@ -1,5 +1,4 @@
-
-import React, { useState, ReactNode } from 'react';
+import React, { useState, ReactNode, useEffect } from 'react';
 import { Challenge, Session, WhiteboardSection, AudioRecording, Feedback } from '@/types';
 import { mockChallenges, mockSessions } from '@/services/mockData';
 import { generateSessionFeedback } from './sessionUtils';
@@ -29,6 +28,24 @@ export const SessionProvider: React.FC<SessionProviderProps> = ({ children }) =>
     final_wrap_up: 0
   });
 
+  // Setup recording timer that's synchronized with the session
+  useEffect(() => {
+    let interval: NodeJS.Timeout | null = null;
+    
+    if (isRecording) {
+      interval = setInterval(() => {
+        setRecordingTime(prev => prev + 1);
+      }, 1000);
+    } else if (!isRecording && interval) {
+      // Don't reset the time when stopping recording
+      // This ensures recording time matches session time
+    }
+    
+    return () => {
+      if (interval) clearInterval(interval);
+    };
+  }, [isRecording]);
+
   // Handler functions
   const selectChallenge = (challengeId: string) => {
     const challenge = challenges.find(c => c.id === challengeId);
@@ -55,6 +72,7 @@ export const SessionProvider: React.FC<SessionProviderProps> = ({ children }) =>
     setSessions([...sessions, newSession]);
     setCurrentSession(newSession);
     setCurrentSection('problem_discovery');
+    setRecordingTime(0);
     toast.success("Session started!");
   };
 
@@ -80,19 +98,11 @@ export const SessionProvider: React.FC<SessionProviderProps> = ({ children }) =>
 
   const startRecording = () => {
     setIsRecording(true);
-    setRecordingTime(0);
-    const recordingInterval = setInterval(() => {
-      setRecordingTime(prev => prev + 1);
-    }, 1000);
-    
-    // Store interval id in window to clear it later
-    (window as any).recordingInterval = recordingInterval;
     toast.success("Recording started");
   };
 
   const stopRecording = () => {
     setIsRecording(false);
-    clearInterval((window as any).recordingInterval);
     toast.success("Recording stopped");
     
     // In a real app, we would process the audio recording here

@@ -1,3 +1,4 @@
+
 import { useState, useEffect, useCallback } from 'react';
 import { useSession } from '@/context/SessionContext';
 import { useNavigate } from 'react-router-dom';
@@ -82,13 +83,16 @@ export function useSessionControls() {
     };
   }, [currentSession, isPaused, currentSection, sectionTime, handleNextSection]);
   
-  // Handle auto-recording when session starts
+  // Handle recording synchronization with session timer
   useEffect(() => {
     if (currentSession && !isPaused && !isRecording) {
-      // Start recording automatically when session starts
+      // Start recording automatically when session starts or resumes
       startRecording();
+    } else if ((isPaused || !currentSession) && isRecording) {
+      // Stop recording when session pauses or ends
+      stopRecording();
     }
-  }, [currentSession, isPaused, isRecording, startRecording]);
+  }, [currentSession, isPaused, isRecording, startRecording, stopRecording]);
   
   // Handle starting the session
   const handleStartSession = () => {
@@ -127,16 +131,10 @@ export function useSessionControls() {
     setIsPaused(!isPaused);
     
     if (isPaused) {
-      // Resuming
-      if (!isRecording) {
-        startRecording();
-      }
+      // Resuming - recording will be handled by the effect above
       toast("Session resumed");
     } else {
-      // Pausing
-      if (isRecording) {
-        stopRecording();
-      }
+      // Pausing - recording will be handled by the effect above
       toast("Session paused");
     }
   };
