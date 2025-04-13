@@ -30,6 +30,17 @@ const SessionHeader: React.FC<SessionHeaderProps> = ({
     return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
   };
   
+  // Format time as minutes
+  const formatTotalTime = (seconds: number): string => {
+    const mins = Math.floor(seconds / 60);
+    const remainingSecs = seconds % 60;
+    return mins === 0 
+      ? `${remainingSecs} sec` 
+      : remainingSecs === 0 
+        ? `${mins} min` 
+        : `${mins} min ${remainingSecs} sec`;
+  };
+  
   // Timer is paused when session is paused (isPaused)
   const timerPaused = isPaused;
   
@@ -46,8 +57,8 @@ const SessionHeader: React.FC<SessionHeaderProps> = ({
         <CardContent className="flex items-center justify-between gap-4 pt-6">
           <div>
             <div className="text-sm text-gray-500">Total Time</div>
-            <div className={`timer-text ${timerPaused ? 'text-amber-500' : ''}`}>
-              {formatTime(totalTime)}
+            <div className={`timer-text ${timerPaused ? 'text-amber-500' : 'text-blue-600 font-semibold'}`}>
+              {formatTotalTime(totalTime)}
             </div>
           </div>
           

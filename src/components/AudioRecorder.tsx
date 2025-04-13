@@ -37,7 +37,7 @@ const AudioRecorder = () => {
             {isRecording ? (
               <div className="flex items-center">
                 <Clock className="h-4 w-4 mr-2" />
-                <span className="font-mono">{formatTime(recordingTime)}</span>
+                <span className="font-mono text-red-600 font-bold">{formatTime(recordingTime)}</span>
               </div>
             ) : (
               <p className="text-sm text-gray-500">
