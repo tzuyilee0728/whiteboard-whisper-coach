@@ -22,7 +22,7 @@ export function useSessionControls() {
   } = useSession();
   
   const [elapsedTime, setElapsedTime] = useState(0);
-  const [remainingTime, setRemainingTime] = useState(0); // Initialize to 0, will be set properly when session starts
+  const [remainingTime, setRemainingTime] = useState(customSessionTime * 60); // Use customSessionTime directly
   const [sectionTime, setSectionTime] = useState(0);
   const [isPaused, setIsPaused] = useState(false);
   const navigate = useNavigate();
@@ -63,7 +63,7 @@ export function useSessionControls() {
     let interval: number | undefined;
     
     // Initialize the remaining time when session starts
-    if (currentSession && !isPaused && remainingTime === 0) {
+    if (currentSession && remainingTime === 0) {
       setRemainingTime(customSessionTime * 60);
     }
     
@@ -124,14 +124,14 @@ export function useSessionControls() {
       setTimeout(() => {
         startSession();
         setElapsedTime(0);  // Reset elapsed time
-        setRemainingTime(customSessionTime * 60);  // Reset timer with CURRENT customSessionTime value
+        setRemainingTime(customSessionTime * 60);  // Set countdown timer from user selection
         setSectionTime(0);  // Reset section time
         setIsPaused(false);  // Ensure not paused
       }, 100);
     } else {
       startSession();
       setElapsedTime(0);  // Reset elapsed time
-      setRemainingTime(customSessionTime * 60);  // Reset timer with CURRENT customSessionTime value
+      setRemainingTime(customSessionTime * 60);  // Set countdown timer from user selection
       setSectionTime(0);  // Reset section time
       setIsPaused(false);  // Ensure not paused
     }
