@@ -13,6 +13,7 @@ interface SessionContextType {
   recordingTime: number;
   sectionProgress: Record<WhiteboardSection, number>;
   audioRecordings: AudioRecording[];
+  customSessionTime: number;
   selectChallenge: (challengeId: string) => void;
   startSession: () => void;
   endSession: () => void;
@@ -22,6 +23,7 @@ interface SessionContextType {
   updateSectionProgress: (section: WhiteboardSection, progress: number) => void;
   addRecording: (recording: AudioRecording) => void;
   updateRecordingTime: (time: number) => void;
+  setCustomSessionTime: (time: number) => void;
 }
 
 // Create context with undefined as default value

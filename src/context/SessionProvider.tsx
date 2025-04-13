@@ -20,6 +20,7 @@ export const SessionProvider: React.FC<SessionProviderProps> = ({ children }) =>
   const [isRecording, setIsRecording] = useState(false);
   const [recordingTime, setRecordingTime] = useState(0);
   const [audioRecordings, setAudioRecordings] = useState<AudioRecording[]>([]);
+  const [customSessionTime, setCustomSessionTime] = useState(45); // Default to 45 minutes
   const [sectionProgress, setSectionProgress] = useState<Record<WhiteboardSection, number>>({
     problem_discovery: 0,
     problem_definition: 0,
@@ -28,9 +29,6 @@ export const SessionProvider: React.FC<SessionProviderProps> = ({ children }) =>
     user_flow_wireframe: 0,
     final_wrap_up: 0
   });
-
-  // We don't need a separate recording timer as we'll use the session timer from useSessionControls
-  // Remove the recording timer effect since it will be synchronized with the session timer
 
   // Handler functions
   const selectChallenge = (challengeId: string) => {
@@ -131,6 +129,7 @@ export const SessionProvider: React.FC<SessionProviderProps> = ({ children }) =>
     recordingTime,
     sectionProgress,
     audioRecordings,
+    customSessionTime,
     selectChallenge,
     startSession,
     endSession,
@@ -139,7 +138,8 @@ export const SessionProvider: React.FC<SessionProviderProps> = ({ children }) =>
     stopRecording,
     updateSectionProgress,
     addRecording,
-    updateRecordingTime
+    updateRecordingTime,
+    setCustomSessionTime
   };
 
   // Return the provider with the context value

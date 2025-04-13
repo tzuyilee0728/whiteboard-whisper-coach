@@ -4,20 +4,22 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import ChallengeSelector from '@/components/ChallengeSelector';
 import { Button } from '@/components/ui/button';
-import { Clock, Timer } from 'lucide-react';
+import { Clock, Timer, Plus, Minus } from 'lucide-react';
 import { useSession } from '@/context/SessionContext';
 import { WhiteboardSection } from '@/types';
 import { sectionTimings } from '@/services/mockData';
 import { toast } from 'sonner';
+import { Slider } from '@/components/ui/slider';
 
 interface SessionStartScreenProps {
   handleStartSession: () => void;
 }
 
 const SessionStartScreen: React.FC<SessionStartScreenProps> = ({ handleStartSession }) => {
-  const { currentChallenge } = useSession();
+  const { currentChallenge, setCustomSessionTime } = useSession();
   const [isCountingDown, setIsCountingDown] = useState(false);
   const [countdown, setCountdown] = useState(5);
+  const [customTime, setCustomTime] = useState(45);
   
   const sections: WhiteboardSection[] = [
     'problem_discovery',
@@ -29,16 +31,16 @@ const SessionStartScreen: React.FC<SessionStartScreenProps> = ({ handleStartSess
   ];
   
   // Calculate total session time in minutes
-  const totalSessionMinutes = Object.values(sectionTimings).reduce(
-    (total, section) => total + section.duration, 
-    0
-  );
+  const totalSessionMinutes = customTime;
   
   const startCountdown = () => {
     if (!currentChallenge) {
       toast.error("Please select a challenge first");
       return;
     }
+
+    // Set the custom session time in the context
+    setCustomSessionTime(customTime);
     
     setIsCountingDown(true);
     setCountdown(5);
@@ -54,6 +56,18 @@ const SessionStartScreen: React.FC<SessionStartScreenProps> = ({ handleStartSess
         return prev - 1;
       });
     }, 1000);
+  };
+
+  const incrementTime = () => {
+    setCustomTime(prev => Math.min(prev + 5, 120)); // Max 120 minutes (2 hours)
+  };
+
+  const decrementTime = () => {
+    setCustomTime(prev => Math.max(prev - 5, 15)); // Min 15 minutes
+  };
+
+  const handleSliderChange = (values: number[]) => {
+    setCustomTime(values[0]);
   };
   
   return (
@@ -94,8 +108,46 @@ const SessionStartScreen: React.FC<SessionStartScreenProps> = ({ handleStartSess
                           </li>
                         ))}
                       </ul>
-                      <p className="mt-2">
-                        Total time: <span className="font-medium">{totalSessionMinutes} minutes</span>
+
+                      <div className="mt-4 mb-2">
+                        <div className="flex justify-between items-center mb-2">
+                          <span className="font-medium">Set Total Session Time:</span>
+                          <div className="flex items-center space-x-2">
+                            <Button 
+                              variant="outline" 
+                              size="sm" 
+                              className="h-8 w-8 p-0" 
+                              onClick={decrementTime}
+                            >
+                              <Minus className="h-4 w-4" />
+                            </Button>
+                            <span className="text-blue-800 font-semibold w-16 text-center">{customTime} min</span>
+                            <Button 
+                              variant="outline" 
+                              size="sm" 
+                              className="h-8 w-8 p-0" 
+                              onClick={incrementTime}
+                            >
+                              <Plus className="h-4 w-4" />
+                            </Button>
+                          </div>
+                        </div>
+                        <Slider 
+                          value={[customTime]} 
+                          min={15} 
+                          max={120} 
+                          step={5} 
+                          onValueChange={handleSliderChange}
+                          className="my-4"
+                        />
+                        <div className="flex justify-between text-xs text-blue-700">
+                          <span>15 min</span>
+                          <span>120 min</span>
+                        </div>
+                      </div>
+                      
+                      <p className="mt-4 font-medium">
+                        Total time: <span className="font-bold">{totalSessionMinutes} minutes</span>
                       </p>
                     </AlertDescription>
                   </div>
