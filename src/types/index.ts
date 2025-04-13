@@ -32,7 +32,7 @@ export interface Feedback {
 export type WhiteboardSection = 
   | 'problem_discovery' 
   | 'problem_definition' 
-  | 'ideation' 
+  | 'ideation'
   | 'prioritization' 
   | 'user_flow_wireframe' 
   | 'final_wrap_up';

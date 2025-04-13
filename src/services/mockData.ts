@@ -53,9 +53,10 @@ export const mockSessions: Session[] = [
       sectionFeedback: {
         problem_discovery: "Asked good clarifying questions about the user demographics and current cart experience.",
         problem_definition: "Clearly defined the problem, but could have explored more root causes.",
-        brainstorming: "Generated a good range of solutions, though could have explored more innovative approaches.",
-        solution_prioritization: "Well-structured prioritization framework based on impact and feasibility.",
-        wireframing: "Clear wireframes that addressed the main pain points."
+        ideation: "Generated a good range of solutions, though could have explored more innovative approaches.",
+        prioritization: "Well-structured prioritization framework based on impact and feasibility.",
+        user_flow_wireframe: "Clear wireframes that addressed the main pain points.",
+        final_wrap_up: "Well summarized solution and approach."
       },
       overallRating: 4
     }
@@ -80,9 +81,10 @@ export const mockSessions: Session[] = [
       sectionFeedback: {
         problem_discovery: "Strong empathy shown in understanding mental health user needs.",
         problem_definition: "Good definition of key problems to solve.",
-        brainstorming: "Creative solutions proposed, well-aligned with user needs.",
-        solution_prioritization: "Could have been more structured in prioritization approach.",
-        wireframing: "Wireframes were clear but could use more detail in key interactions."
+        ideation: "Creative solutions proposed, well-aligned with user needs.",
+        prioritization: "Could have been more structured in prioritization approach.",
+        user_flow_wireframe: "Wireframes were clear but could use more detail in key interactions.",
+        final_wrap_up: "Good wrap up of the session with key points."
       },
       overallRating: 3.5
     }
@@ -102,23 +104,29 @@ export const sectionTimings: Record<WhiteboardSection, SectionTiming> = {
     duration: 7,
     description: "Define the core problem to solve and key success metrics."
   },
-  brainstorming: {
-    section: "brainstorming",
-    title: "Brainstorming",
+  ideation: {
+    section: "ideation",
+    title: "Ideation",
     duration: 12,
     description: "Generate multiple solutions and approaches to solve the problem."
   },
-  solution_prioritization: {
-    section: "solution_prioritization",
-    title: "Solution Prioritization",
+  prioritization: {
+    section: "prioritization",
+    title: "Prioritization",
     duration: 7,
     description: "Evaluate and prioritize solutions based on criteria like impact and feasibility."
   },
-  wireframing: {
-    section: "wireframing",
-    title: "Wireframing",
+  user_flow_wireframe: {
+    section: "user_flow_wireframe",
+    title: "User Flow & Wireframe",
     duration: 10,
     description: "Sketch out the key screens and user flow for your solution."
+  },
+  final_wrap_up: {
+    section: "final_wrap_up",
+    title: "Final Wrap-up",
+    duration: 5,
+    description: "Summarize your approach and solution."
   }
 };
 
@@ -175,23 +183,29 @@ export const generateMockFeedback = (section: WhiteboardSection): string => {
       "Good identification of success metrics.",
       "Try to be more specific about which user segments are most affected."
     ],
-    brainstorming: [
+    ideation: [
       "Wide range of creative solutions proposed.",
       "Consider exploring more technically innovative approaches.",
       "Good balance between feasibility and innovation.",
       "Try using more structured brainstorming techniques."
     ],
-    solution_prioritization: [
+    prioritization: [
       "Clear prioritization criteria established.",
       "Consider adding more quantitative measures for prioritization.",
       "Good explanation of trade-offs between solutions.",
       "Try to be more explicit about how solutions map to user needs."
     ],
-    wireframing: [
+    user_flow_wireframe: [
       "Clear visual representation of key screens.",
       "Consider showing more states and edge cases.",
       "Good annotation explaining design decisions.",
       "Try to highlight the user flow more explicitly."
+    ],
+    final_wrap_up: [
+      "Effective summary of your approach and solution.",
+      "Consider highlighting key trade-offs made during the process.",
+      "Good explanation of next steps for the solution.",
+      "Try to tie your solution back to the original problem more explicitly."
     ]
   };
 

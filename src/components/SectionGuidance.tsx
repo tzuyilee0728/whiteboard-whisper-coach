@@ -6,7 +6,7 @@ import { sectionTimings } from '@/services/mockData';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { HelpCircle, ChevronDown, ChevronUp } from 'lucide-react';
-import SectionTimer from './SectionTimer';
+import { Progress } from '@/components/ui/progress';
 
 interface SectionGuidanceProps {
   section: WhiteboardSection;
@@ -15,7 +15,6 @@ interface SectionGuidanceProps {
 const SectionGuidance: React.FC<SectionGuidanceProps> = ({ section }) => {
   const { currentSection } = useSession();
   const [expanded, setExpanded] = useState(false);
-  const isActive = currentSection === section;
   
   // Tips for each section
   const sectionTips: Record<WhiteboardSection, string[]> = {
@@ -58,46 +57,39 @@ const SectionGuidance: React.FC<SectionGuidanceProps> = ({ section }) => {
   };
   
   return (
-    <Card className={`mb-4 ${isActive ? 'border-brand-500 section-active' : ''}`}>
-      <CardHeader className="pb-2">
-        <CardTitle className="flex justify-between items-center">
-          <div>{sectionTimings[section].title}</div>
-          {isActive && (
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => setExpanded(!expanded)}
-              className="h-8 w-8 p-0"
-            >
-              {expanded ? (
-                <ChevronUp className="h-4 w-4" />
-              ) : (
-                <ChevronDown className="h-4 w-4" />
-              )}
-            </Button>
+    <div className="bg-white p-4 rounded-md border">
+      <div className="flex items-center justify-between mb-2">
+        <h3 className="text-lg font-medium">{sectionTimings[section].title}</h3>
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={() => setExpanded(!expanded)}
+          className="h-8 w-8 p-0"
+        >
+          {expanded ? (
+            <ChevronUp className="h-4 w-4" />
+          ) : (
+            <ChevronDown className="h-4 w-4" />
           )}
-        </CardTitle>
-      </CardHeader>
-      <CardContent>
-        <SectionTimer section={section} />
-        
-        <p className="text-sm text-gray-600 mb-2">{sectionTimings[section].description}</p>
-        
-        {isActive && expanded && (
-          <div className="mt-4 bg-gray-50 p-3 rounded-md border">
-            <div className="flex items-center gap-1 text-sm font-medium mb-2">
-              <HelpCircle className="h-4 w-4 text-brand-500" />
-              <span>Tips for this section:</span>
-            </div>
-            <ul className="text-sm list-disc pl-5 space-y-1">
-              {sectionTips[section].map((tip, index) => (
-                <li key={index}>{tip}</li>
-              ))}
-            </ul>
+        </Button>
+      </div>
+      
+      <p className="text-sm text-gray-600 mb-4">{sectionTimings[section].description}</p>
+      
+      {expanded && (
+        <div className="mt-4 bg-gray-50 p-3 rounded-md border">
+          <div className="flex items-center gap-1 text-sm font-medium mb-2">
+            <HelpCircle className="h-4 w-4 text-brand-500" />
+            <span>Tips for this section:</span>
           </div>
-        )}
-      </CardContent>
-    </Card>
+          <ul className="text-sm list-disc pl-5 space-y-1">
+            {sectionTips[section].map((tip, index) => (
+              <li key={index}>{tip}</li>
+            ))}
+          </ul>
+        </div>
+      )}
+    </div>
   );
 };
 

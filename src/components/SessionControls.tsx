@@ -5,6 +5,7 @@ import { ChevronLeft, ChevronRight } from 'lucide-react';
 import SectionGuidance from '@/components/SectionGuidance';
 import AudioRecorder from '@/components/AudioRecorder';
 import { WhiteboardSection } from '@/types';
+import SessionProgressBar from './SessionProgressBar';
 
 interface SessionControlsProps {
   sections: WhiteboardSection[];
@@ -26,10 +27,10 @@ const SessionControls: React.FC<SessionControlsProps> = ({
           Session Progress
         </h3>
         
+        <SessionProgressBar sections={sections} />
+        
         <div className="space-y-2">
-          {sections.map((section) => (
-            <SectionGuidance key={section} section={section} />
-          ))}
+          <SectionGuidance section={currentSection} />
         </div>
         
         <div className="flex justify-between mt-4">
