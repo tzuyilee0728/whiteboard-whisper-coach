@@ -12,7 +12,7 @@ interface SessionProgressBarProps {
 }
 
 const SessionProgressBar: React.FC<SessionProgressBarProps> = ({ sections }) => {
-  const { currentSection, customSessionTime } = useSession();
+  const { customSessionTime } = useSession();
   const { totalTime } = useSessionControls();
 
   // Calculate progress percentage based on time remaining
@@ -20,19 +20,6 @@ const SessionProgressBar: React.FC<SessionProgressBarProps> = ({ sections }) => 
     const totalSeconds = customSessionTime * 60;
     const elapsedSeconds = totalSeconds - totalTime;
     return Math.min(100, Math.max(0, (elapsedSeconds / totalSeconds) * 100));
-  };
-
-  const getSectionStatus = (section: WhiteboardSection) => {
-    const currentIndex = sections.indexOf(currentSection);
-    const sectionIndex = sections.indexOf(section);
-    
-    if (sectionIndex < currentIndex) {
-      return 'completed';
-    } else if (sectionIndex === currentIndex) {
-      return 'active';
-    } else {
-      return 'upcoming';
-    }
   };
 
   return (
@@ -45,42 +32,22 @@ const SessionProgressBar: React.FC<SessionProgressBarProps> = ({ sections }) => 
       <div className="flex items-center justify-between relative">
         {/* Section Markers */}
         <div className="w-full flex items-center justify-between relative z-10">
-          {sections.map((section, index) => {
-            const status = getSectionStatus(section);
-            return (
-              <div 
-                key={section} 
-                className={`flex flex-col items-center`}
-              >
-                {status === 'active' ? (
-                  <Circle 
-                    className="h-6 w-6 text-brand-500 bg-white border-2 border-brand-500 rounded-full" 
-                    fill="#FFFFFF" 
-                  />
-                ) : (
-                  <Circle 
-                    className={`h-6 w-6 bg-white border-2 rounded-full ${
-                      status === 'completed' ? 'border-gray-700 bg-gray-200' : 'border-gray-300'
-                    }`}
-                    fill={status === 'completed' ? '#E5E7EB' : '#FFFFFF'}
-                  />
-                )}
-                
-                {/* Section title below the step number */}
-                <span 
-                  className={`text-xs mt-1 text-center max-w-[60px] ${
-                    status === 'active' 
-                      ? 'text-brand-500 font-medium' 
-                      : status === 'completed' 
-                      ? 'text-gray-700' 
-                      : 'text-gray-500'
-                  }`}
-                >
-                  {sectionTimings[section].title.split(' ')[0]}
-                </span>
-              </div>
-            );
-          })}
+          {sections.map((section) => (
+            <div 
+              key={section} 
+              className="flex flex-col items-center"
+            >
+              <Circle 
+                className="h-6 w-6 bg-white border-2 border-gray-300 rounded-full" 
+                fill="#FFFFFF" 
+              />
+              
+              {/* Section title below the circle */}
+              <span className="text-xs mt-1 text-center max-w-[60px] text-gray-500">
+                {sectionTimings[section].title.split(' ')[0]}
+              </span>
+            </div>
+          ))}
         </div>
       </div>
     </div>
