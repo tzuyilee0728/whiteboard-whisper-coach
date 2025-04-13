@@ -1,6 +1,6 @@
 
 import React, { createContext, useContext, useState, ReactNode } from 'react';
-import { Challenge, Session, WhiteboardSection, AudioRecording } from '@/types';
+import { Challenge, Session, WhiteboardSection, AudioRecording, Feedback } from '@/types';
 import { mockChallenges, mockSessions, sectionTimings, generateMockFeedback } from '@/services/mockData';
 import { toast } from 'sonner';
 
@@ -87,8 +87,24 @@ export const SessionProvider: React.FC<SessionProviderProps> = ({ children }) =>
     toast.success("Session started!");
   };
 
-  const generateSessionFeedback = () => {
-    if (!currentSession) return {};
+  const generateSessionFeedback = (): Feedback => {
+    if (!currentSession) {
+      // Create a default feedback object that matches the Feedback type
+      return {
+        id: "default",
+        sessionId: "default",
+        strengths: ["No session data available"],
+        improvements: ["No session data available"],
+        sectionFeedback: {
+          problem_discovery: "No data",
+          problem_definition: "No data",
+          brainstorming: "No data",
+          solution_prioritization: "No data",
+          wireframing: "No data"
+        },
+        overallRating: 0
+      };
+    }
     
     // Generate feedback for each section
     const sectionFeedback: Record<WhiteboardSection, string> = {
@@ -109,9 +125,18 @@ export const SessionProvider: React.FC<SessionProviderProps> = ({ children }) =>
       .filter(feedback => feedback.includes("Consider") || feedback.includes("Try"))
       .slice(0, 2);
     
+    // If we don't have enough strengths or improvements, add defaults
+    if (strengths.length === 0) {
+      strengths.push("Good effort overall");
+    }
+    if (improvements.length === 0) {
+      improvements.push("Consider practicing more regularly");
+    }
+    
     // Random rating between 3 and 5
     const overallRating = Number((3 + Math.random() * 2).toFixed(1));
     
+    // Return a properly typed Feedback object
     return {
       id: `f${currentSession.id.substring(1)}`,
       sessionId: currentSession.id,
@@ -125,21 +150,20 @@ export const SessionProvider: React.FC<SessionProviderProps> = ({ children }) =>
   const endSession = () => {
     if (currentSession) {
       // Generate feedback
-      const feedback = generateSessionFeedback();
+      const feedback: Feedback = generateSessionFeedback();
       
-      const updatedSession = { 
+      // Create an updated session with the correct typing
+      const updatedSession: Session = { 
         ...currentSession, 
-        status: 'completed' as const,
-        feedback
+        status: 'completed',
+        feedback: feedback
       };
       
+      // Update sessions with type-safe approach
       setSessions(sessions.map(s => s.id === currentSession.id ? updatedSession : s));
       setCurrentSession(null);
       
       toast.success("Session ended! View your feedback on the dashboard.");
-      
-      // This would be a good place to analyze the audio and provide feedback
-      // For MVP, we're just simulating this
     }
   };
 
@@ -210,3 +234,4 @@ export const SessionProvider: React.FC<SessionProviderProps> = ({ children }) =>
     </SessionContext.Provider>
   );
 };
+

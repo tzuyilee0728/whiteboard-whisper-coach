@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Link } from 'react-router-dom';
-import { Clock, Calendar, Star, BarChart, ArrowRight } from 'lucide-react';
+import { Clock, Calendar, Star, BarChart } from 'lucide-react';
 
 const Dashboard = () => {
   const { sessions } = useSession();
@@ -171,16 +171,10 @@ const Dashboard = () => {
                         <Button size="sm" variant="outline" className="mb-2">
                           View Full Feedback
                         </Button>
-                        <Button size="sm" className="w-full">
-                          Practice Again <ArrowRight className="ml-1 h-4 w-4" />
-                        </Button>
                       </div>
                     ) : (
                       <div className="text-center">
                         <p className="text-gray-500 text-sm mb-3">Session in progress</p>
-                        <Button size="sm">
-                          Resume Session <ArrowRight className="ml-1 h-4 w-4" />
-                        </Button>
                       </div>
                     )}
                   </div>
@@ -201,3 +195,4 @@ const Dashboard = () => {
 };
 
 export default Dashboard;
+
