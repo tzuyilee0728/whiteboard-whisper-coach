@@ -59,15 +59,13 @@ export function useSessionControls() {
     }
   }, [currentSection, sections, setCurrentSection]);
 
-  // Reset timers when session starts - separate effect to watch for session status changes
+  // Handle timer initialization when customSessionTime changes
   useEffect(() => {
-    if (currentSession && !isPaused && remainingTime === 0) {
-      // Initialize remaining time when session first starts
+    if (currentSession && !isPaused) {
+      // Update the remaining time when customSessionTime changes during an active session
       setRemainingTime(customSessionTime * 60);
-      setElapsedTime(0);
-      setSectionTime(0);
     }
-  }, [currentSession, customSessionTime, isPaused, remainingTime]);
+  }, [customSessionTime]);
 
   // Handle timer logic - countdown from set time
   useEffect(() => {
@@ -127,21 +125,22 @@ export function useSessionControls() {
       const randomChallenge = mockChallenges[randomIndex];
       selectChallenge(randomChallenge.id);
       
-      setTimeout(() => {
-        startSession();
-        // Explicitly set the remaining time with the current customSessionTime value
-        setRemainingTime(customSessionTime * 60);
-        setElapsedTime(0);
-        setSectionTime(0);
-        setIsPaused(false);
-      }, 100);
-    } else {
-      startSession();
-      // Explicitly set the remaining time with the current customSessionTime value
+      // First set the timer values, then start the session
       setRemainingTime(customSessionTime * 60);
       setElapsedTime(0);
       setSectionTime(0);
       setIsPaused(false);
+      
+      setTimeout(() => {
+        startSession();
+      }, 100);
+    } else {
+      // First set the timer values, then start the session
+      setRemainingTime(customSessionTime * 60);
+      setElapsedTime(0);
+      setSectionTime(0);
+      setIsPaused(false);
+      startSession();
     }
   };
   
