@@ -21,7 +21,7 @@ const AudioRecorder = () => {
     return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
   };
   
-  // Recording is now controlled by session state
+  // Recording is controlled by session state
   const handleRecordToggle = () => {
     if (isRecording) {
       stopRecording();
@@ -49,7 +49,11 @@ const AudioRecorder = () => {
                 <span className="font-mono">{formatTime(recordingTime)}</span>
               </div>
             ) : (
-              <p className="text-sm text-gray-500">Record your response to practice speaking aloud</p>
+              <p className="text-sm text-gray-500">
+                {currentSession ? 
+                  "Recording paused. Click to resume." : 
+                  "Recording will start automatically when session begins"}
+              </p>
             )}
           </div>
           
@@ -67,7 +71,7 @@ const AudioRecorder = () => {
             ) : (
               <>
                 <Mic className="h-4 w-4 mr-2" />
-                Start Recording
+                {currentSession ? "Resume Recording" : "Start Recording"}
               </>
             )}
           </Button>

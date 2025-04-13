@@ -38,11 +38,6 @@ export function useSessionControls() {
     let interval: number | undefined;
     
     if (currentSession && !isPaused) {
-      // Start recording automatically when session starts
-      if (!isRecording) {
-        startRecording();
-      }
-      
       interval = window.setInterval(() => {
         setTotalTime(prev => prev + 1);
       }, 1000);
@@ -51,6 +46,14 @@ export function useSessionControls() {
     return () => {
       if (interval) clearInterval(interval);
     };
+  }, [currentSession, isPaused]);
+  
+  // Handle auto-recording when session starts
+  useEffect(() => {
+    if (currentSession && !isPaused && !isRecording) {
+      // Start recording automatically when session starts
+      startRecording();
+    }
   }, [currentSession, isPaused, isRecording, startRecording]);
   
   // Handle starting the session

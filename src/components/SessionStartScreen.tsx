@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
@@ -46,6 +47,7 @@ const SessionStartScreen: React.FC<SessionStartScreenProps> = ({ handleStartSess
       setCountdown(prev => {
         if (prev <= 1) {
           clearInterval(countdownInterval);
+          // Start the session which will trigger the recording to start automatically
           handleStartSession();
           return 0;
         }
