@@ -1,5 +1,5 @@
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useSession } from '@/context/SessionContext';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
@@ -21,6 +21,7 @@ export function useSessionControls() {
   } = useSession();
   
   const [totalTime, setTotalTime] = useState(0);
+  const [sectionTime, setSectionTime] = useState(0);
   const [isPaused, setIsPaused] = useState(false);
   const navigate = useNavigate();
   
@@ -33,6 +34,32 @@ export function useSessionControls() {
     'final_wrap_up'
   ];
 
+  // Function to move to the next section
+  const handleNextSection = useCallback(() => {
+    const currentIndex = sections.indexOf(currentSection);
+    if (currentIndex < sections.length - 1) {
+      const nextSection = sections[currentIndex + 1];
+      setCurrentSection(nextSection);
+      setSectionTime(0); // Reset section timer
+      toast.success(`Moving to ${sectionTimings[nextSection].title} section`);
+    } else {
+      toast.info("You've reached the final section!");
+    }
+  }, [currentSection, sections, setCurrentSection]);
+  
+  // Function to move to the previous section
+  const handlePrevSection = useCallback(() => {
+    const currentIndex = sections.indexOf(currentSection);
+    if (currentIndex > 0) {
+      const prevSection = sections[currentIndex - 1];
+      setCurrentSection(prevSection);
+      setSectionTime(0); // Reset section timer
+      toast.success(`Moving to ${sectionTimings[prevSection].title} section`);
+    } else {
+      toast.info("You're at the first section!");
+    }
+  }, [currentSection, sections, setCurrentSection]);
+
   // Handle timer logic
   useEffect(() => {
     let interval: number | undefined;
@@ -40,13 +67,20 @@ export function useSessionControls() {
     if (currentSession && !isPaused) {
       interval = window.setInterval(() => {
         setTotalTime(prev => prev + 1);
+        setSectionTime(prev => prev + 1);
+        
+        // Check if section time is up
+        const currentSectionTiming = sectionTimings[currentSection]?.duration || 300;
+        if (sectionTime >= currentSectionTiming) {
+          handleNextSection();
+        }
       }, 1000);
     }
     
     return () => {
       if (interval) clearInterval(interval);
     };
-  }, [currentSession, isPaused]);
+  }, [currentSession, isPaused, currentSection, sectionTime, handleNextSection]);
   
   // Handle auto-recording when session starts
   useEffect(() => {
@@ -67,11 +101,13 @@ export function useSessionControls() {
       setTimeout(() => {
         startSession();
         setTotalTime(0);
+        setSectionTime(0); // Reset section timer
         setIsPaused(false);
       }, 100);
     } else {
       startSession();
       setTotalTime(0);
+      setSectionTime(0); // Reset section timer
       setIsPaused(false);
     }
   };
@@ -84,30 +120,6 @@ export function useSessionControls() {
     
     endSession();
     navigate('/dashboard');
-  };
-  
-  // Handle moving to the next section
-  const handleNextSection = () => {
-    const currentIndex = sections.indexOf(currentSection);
-    if (currentIndex < sections.length - 1) {
-      const nextSection = sections[currentIndex + 1];
-      setCurrentSection(nextSection);
-      toast.success(`Moving to ${sectionTimings[nextSection].title} section`);
-    } else {
-      toast.info("You've reached the final section!");
-    }
-  };
-  
-  // Handle moving to the previous section
-  const handlePrevSection = () => {
-    const currentIndex = sections.indexOf(currentSection);
-    if (currentIndex > 0) {
-      const prevSection = sections[currentIndex - 1];
-      setCurrentSection(prevSection);
-      toast.success(`Moving to ${sectionTimings[prevSection].title} section`);
-    } else {
-      toast.info("You're at the first section!");
-    }
   };
   
   // Handle pausing and resuming the session

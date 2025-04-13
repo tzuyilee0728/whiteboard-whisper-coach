@@ -77,6 +77,19 @@ const SessionProgressBar: React.FC<SessionProgressBarProps> = ({ sections }) => 
                 >
                   {index + 1}
                 </span>
+                
+                {/* Added section title below the step number */}
+                <span 
+                  className={`text-xs mt-1 text-center max-w-[60px] ${
+                    status === 'active' 
+                      ? 'text-brand-500 font-medium' 
+                      : status === 'completed' 
+                      ? 'text-gray-700' 
+                      : 'text-gray-500'
+                  }`}
+                >
+                  {sectionTimings[section].title.split(' ')[0]}
+                </span>
               </div>
             );
           })}
