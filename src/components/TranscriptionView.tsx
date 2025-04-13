@@ -9,13 +9,19 @@ const TranscriptionView = () => {
   const [transcription, setTranscription] = useState<string>('');
   const [isTranscribing, setIsTranscribing] = useState<boolean>(false);
 
+  // Reset transcription when session changes
+  useEffect(() => {
+    if (currentSession) {
+      setTranscription('');
+    }
+  }, [currentSession]);
+
   // Simulate real-time transcription when recording
   useEffect(() => {
     if (isRecording) {
       setIsTranscribing(true);
       
       // In a real implementation, this would be connected to a speech-to-text API
-      // For the MVP, we'll simulate transcription with placeholder text
       const transcriptionInterval = setInterval(() => {
         setTranscription(prev => {
           const placeholderTexts = [

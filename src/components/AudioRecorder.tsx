@@ -6,7 +6,13 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Mic, MicOff, Clock } from 'lucide-react';
 
 const AudioRecorder = () => {
-  const { isRecording, recordingTime, startRecording, stopRecording } = useSession();
+  const { 
+    isRecording, 
+    recordingTime, 
+    startRecording, 
+    stopRecording, 
+    currentSession 
+  } = useSession();
   
   // Format recording time
   const formatTime = (seconds: number): string => {
@@ -15,6 +21,7 @@ const AudioRecorder = () => {
     return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
   };
   
+  // Recording is now controlled by session state
   const handleRecordToggle = () => {
     if (isRecording) {
       stopRecording();
@@ -50,6 +57,7 @@ const AudioRecorder = () => {
             onClick={handleRecordToggle}
             variant={isRecording ? "destructive" : "default"}
             className={`w-full ${!isRecording ? 'bg-brand-600 hover:bg-brand-700' : ''}`}
+            disabled={!currentSession}
           >
             {isRecording ? (
               <>

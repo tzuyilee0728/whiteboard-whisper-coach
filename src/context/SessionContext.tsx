@@ -1,7 +1,7 @@
 
 import React, { createContext, useContext, useState, ReactNode } from 'react';
 import { Challenge, Session, WhiteboardSection, AudioRecording } from '@/types';
-import { mockChallenges, mockSessions, sectionTimings } from '@/services/mockData';
+import { mockChallenges, mockSessions, sectionTimings, generateMockFeedback } from '@/services/mockData';
 import { toast } from 'sonner';
 
 interface SessionContextType {
@@ -87,12 +87,59 @@ export const SessionProvider: React.FC<SessionProviderProps> = ({ children }) =>
     toast.success("Session started!");
   };
 
+  const generateSessionFeedback = () => {
+    if (!currentSession) return {};
+    
+    // Generate feedback for each section
+    const sectionFeedback: Record<WhiteboardSection, string> = {
+      problem_discovery: generateMockFeedback('problem_discovery'),
+      problem_definition: generateMockFeedback('problem_definition'),
+      brainstorming: generateMockFeedback('brainstorming'),
+      solution_prioritization: generateMockFeedback('solution_prioritization'),
+      wireframing: generateMockFeedback('wireframing')
+    };
+    
+    // Generate random strengths and improvements
+    const allFeedback = Object.values(sectionFeedback);
+    const strengths = allFeedback
+      .filter(feedback => !feedback.includes("Consider") && !feedback.includes("Try"))
+      .slice(0, 2);
+    
+    const improvements = allFeedback
+      .filter(feedback => feedback.includes("Consider") || feedback.includes("Try"))
+      .slice(0, 2);
+    
+    // Random rating between 3 and 5
+    const overallRating = Number((3 + Math.random() * 2).toFixed(1));
+    
+    return {
+      id: `f${currentSession.id.substring(1)}`,
+      sessionId: currentSession.id,
+      strengths,
+      improvements,
+      sectionFeedback,
+      overallRating
+    };
+  };
+
   const endSession = () => {
     if (currentSession) {
-      const updatedSession = { ...currentSession, status: 'completed' as const };
+      // Generate feedback
+      const feedback = generateSessionFeedback();
+      
+      const updatedSession = { 
+        ...currentSession, 
+        status: 'completed' as const,
+        feedback
+      };
+      
       setSessions(sessions.map(s => s.id === currentSession.id ? updatedSession : s));
       setCurrentSession(null);
+      
       toast.success("Session ended! View your feedback on the dashboard.");
+      
+      // This would be a good place to analyze the audio and provide feedback
+      // For MVP, we're just simulating this
     }
   };
 

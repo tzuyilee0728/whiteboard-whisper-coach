@@ -12,7 +12,7 @@ import SessionControls from '@/components/SessionControls';
 import SessionContent from '@/components/SessionContent';
 import PracticeSessionFooter from '@/components/PracticeSessionFooter';
 import { WhiteboardSection } from '@/types';
-import { sectionTimings } from '@/services/mockData';
+import { sectionTimings, mockChallenges } from '@/services/mockData';
 
 const PracticeSession = () => {
   const { 
@@ -22,7 +22,10 @@ const PracticeSession = () => {
     startSession, 
     endSession, 
     isRecording,
-    currentSession
+    currentSession,
+    startRecording,
+    stopRecording,
+    selectChallenge
   } = useSession();
   
   const [totalTime, setTotalTime] = useState(0);
@@ -38,12 +41,24 @@ const PracticeSession = () => {
     'solution_prioritization',
     'wireframing'
   ];
+
+  // Select a random challenge on component mount
+  useEffect(() => {
+    if (!currentSession && mockChallenges.length > 0) {
+      // We don't immediately select, we wait for user to click Start
+    }
+  }, []);
   
   // Handle timer logic
   useEffect(() => {
     let interval: number | undefined;
     
     if (currentSession && !isPaused) {
+      // Start recording automatically when session starts
+      if (!isRecording) {
+        startRecording();
+      }
+      
       interval = window.setInterval(() => {
         setTotalTime(prev => prev + 1);
       }, 1000);
@@ -52,26 +67,32 @@ const PracticeSession = () => {
     return () => {
       if (interval) clearInterval(interval);
     };
-  }, [currentSession, isPaused]);
+  }, [currentSession, isPaused, isRecording, startRecording]);
   
   // Handle starting the session
   const handleStartSession = () => {
+    // Select random challenge if one isn't already selected
     if (!currentChallenge) {
-      toast.error("Please select a challenge first");
-      return;
+      const randomIndex = Math.floor(Math.random() * mockChallenges.length);
+      const randomChallenge = mockChallenges[randomIndex];
+      selectChallenge(randomChallenge.id);
+      
+      setTimeout(() => {
+        startSession();
+        setTotalTime(0);
+        setIsPaused(false);
+      }, 100);
+    } else {
+      startSession();
+      setTotalTime(0);
+      setIsPaused(false);
     }
-    
-    startSession();
-    setTotalTime(0);
-    setIsPaused(false);
   };
   
   // Handle ending the session
   const handleEndSession = () => {
     if (isRecording) {
-      // Stop recording first
-      toast.error("Please stop recording before ending the session");
-      return;
+      stopRecording();
     }
     
     endSession();
@@ -105,7 +126,20 @@ const PracticeSession = () => {
   // Handle pausing and resuming the session
   const handlePauseResumeSession = () => {
     setIsPaused(!isPaused);
-    toast(isPaused ? "Session resumed" : "Session paused");
+    
+    if (isPaused) {
+      // Resuming
+      if (!isRecording) {
+        startRecording();
+      }
+      toast("Session resumed");
+    } else {
+      // Pausing
+      if (isRecording) {
+        stopRecording();
+      }
+      toast("Session paused");
+    }
   };
   
   // Handle sharing functionality
