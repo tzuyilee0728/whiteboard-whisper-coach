@@ -60,12 +60,13 @@ export function useSessionControls() {
     }
   }, [currentSection, sections, setCurrentSection]);
 
-  // Handle timer logic - now responsive to recording state
+  // Handle timer logic - responsive to session and recording states
   useEffect(() => {
     let interval: number | undefined;
     
-    // Only run timer when recording is active and session is not paused
-    if (currentSession && !isPaused && isRecording) {
+    // Only run timer when session is active and not paused
+    // The recording state is now only used for the audio recording timer
+    if (currentSession && !isPaused) {
       interval = window.setInterval(() => {
         setTotalTime(prev => prev + 1);
         setSectionTime(prev => prev + 1);
@@ -81,7 +82,7 @@ export function useSessionControls() {
     return () => {
       if (interval) clearInterval(interval);
     };
-  }, [currentSession, isPaused, currentSection, sectionTime, handleNextSection, isRecording]);
+  }, [currentSession, isPaused, currentSection, sectionTime, handleNextSection]);
   
   // Handle auto-recording when session starts
   useEffect(() => {
@@ -102,13 +103,13 @@ export function useSessionControls() {
       setTimeout(() => {
         startSession();
         setTotalTime(0);
-        setSectionTime(0); // Reset section timer
+        setSectionTime(0);
         setIsPaused(false);
       }, 100);
     } else {
       startSession();
       setTotalTime(0);
-      setSectionTime(0); // Reset section timer
+      setSectionTime(0);
       setIsPaused(false);
     }
   };

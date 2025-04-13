@@ -9,7 +9,7 @@ interface SessionHeaderProps {
   description: string;
   totalTime: number;
   isPaused: boolean;
-  isRecording: boolean;  // Added this prop
+  isRecording: boolean;
   handlePauseResumeSession: () => void;
   handleEndSession: () => void;
 }
@@ -19,7 +19,7 @@ const SessionHeader: React.FC<SessionHeaderProps> = ({
   description,
   totalTime,
   isPaused,
-  isRecording,  // Using the new prop
+  isRecording,
   handlePauseResumeSession,
   handleEndSession
 }) => {
@@ -30,8 +30,8 @@ const SessionHeader: React.FC<SessionHeaderProps> = ({
     return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
   };
   
-  // Timer is paused either when manually paused or when recording is stopped
-  const timerPaused = isPaused || !isRecording;
+  // Timer is paused when session is paused (isPaused)
+  const timerPaused = isPaused;
   
   return (
     <div className="flex flex-col md:flex-row justify-between gap-4 mb-6">

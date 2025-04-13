@@ -25,8 +25,7 @@ const AudioRecorder = () => {
   const handleRecordToggle = () => {
     if (isRecording) {
       stopRecording();
-      // This will now also pause the session timer because we updated the useSessionControls hook
-      // to only increment time when isRecording is true
+      // Timer will stay stopped until recording is resumed
     } else {
       startRecording();
     }
@@ -53,7 +52,7 @@ const AudioRecorder = () => {
             ) : (
               <p className="text-sm text-gray-500">
                 {currentSession ? 
-                  "Recording paused. Timer stopped." : 
+                  "Recording stopped. Timer paused." : 
                   "Recording will start automatically when session begins"}
               </p>
             )}
