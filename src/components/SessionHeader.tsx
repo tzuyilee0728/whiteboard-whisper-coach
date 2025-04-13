@@ -41,7 +41,7 @@ const SessionHeader: React.FC<SessionHeaderProps> = ({
         : `${mins} min ${remainingSecs} sec`;
   };
   
-  // Timer is paused when session is paused (isPaused)
+  // Timer is paused when session is paused
   const timerPaused = isPaused;
   
   return (
@@ -56,7 +56,7 @@ const SessionHeader: React.FC<SessionHeaderProps> = ({
       <Card className="w-full md:w-auto">
         <CardContent className="flex items-center justify-between gap-4 pt-6">
           <div>
-            <div className="text-sm text-gray-500">Total Time</div>
+            <div className="text-sm text-gray-500">Time Remaining</div>
             <div className={`timer-text ${timerPaused ? 'text-amber-500' : 'text-blue-600 font-semibold'}`}>
               {formatTotalTime(totalTime)}
             </div>

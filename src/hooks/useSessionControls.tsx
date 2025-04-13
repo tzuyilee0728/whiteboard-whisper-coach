@@ -1,3 +1,4 @@
+
 import { useState, useEffect, useCallback } from 'react';
 import { useSession } from '@/context/SessionContext';
 import { useNavigate } from 'react-router-dom';
@@ -17,10 +18,12 @@ export function useSessionControls() {
     startRecording,
     stopRecording,
     selectChallenge,
-    updateRecordingTime
+    updateRecordingTime,
+    customSessionTime
   } = useSession();
   
-  const [totalTime, setTotalTime] = useState(0);
+  const [elapsedTime, setElapsedTime] = useState(0);
+  const [remainingTime, setRemainingTime] = useState(customSessionTime * 60); // Convert minutes to seconds
   const [sectionTime, setSectionTime] = useState(0);
   const [isPaused, setIsPaused] = useState(false);
   const navigate = useNavigate();
@@ -41,9 +44,6 @@ export function useSessionControls() {
       const nextSection = sections[currentIndex + 1];
       setCurrentSection(nextSection);
       setSectionTime(0); // Reset section timer
-      // Removed toast notification
-    } else {
-      // Removed toast for the final section
     }
   }, [currentSection, sections, setCurrentSection]);
   
@@ -54,26 +54,35 @@ export function useSessionControls() {
       const prevSection = sections[currentIndex - 1];
       setCurrentSection(prevSection);
       setSectionTime(0); // Reset section timer
-      // Existing toast notification already removed
     } else {
-      // Kept the toast for the first section
       toast.info("You're at the first section!");
     }
   }, [currentSection, sections, setCurrentSection]);
 
-  // Handle timer logic - responsive to session and recording states
+  // Handle timer logic - countdown from set time
   useEffect(() => {
     let interval: number | undefined;
+    
+    // Initialize the remaining time when session starts
+    if (currentSession && remainingTime === 0) {
+      setRemainingTime(customSessionTime * 60);
+    }
     
     // Only run timer when session is active and not paused
     if (currentSession && !isPaused) {
       interval = window.setInterval(() => {
-        setTotalTime(prev => {
-          const newTotal = prev + 1;
-          // Update recording time to match total session time
-          updateRecordingTime(newTotal);
-          return newTotal;
+        setElapsedTime(prev => {
+          const newElapsed = prev + 1;
+          // Update recording time to match elapsed session time
+          updateRecordingTime(newElapsed);
+          return newElapsed;
         });
+        
+        setRemainingTime(prev => {
+          // Ensure we don't go below zero
+          return prev > 0 ? prev - 1 : 0;
+        });
+        
         setSectionTime(prev => prev + 1);
         
         // Check if section time is up
@@ -81,13 +90,18 @@ export function useSessionControls() {
         if (sectionTime >= currentSectionTiming) {
           handleNextSection();
         }
+        
+        // Check if total time is up
+        if (remainingTime <= 1) {
+          toast.info("Your session time is up! You can continue or end the session.");
+        }
       }, 1000);
     }
     
     return () => {
       if (interval) clearInterval(interval);
     };
-  }, [currentSession, isPaused, currentSection, sectionTime, handleNextSection, updateRecordingTime]);
+  }, [currentSession, isPaused, currentSection, sectionTime, handleNextSection, updateRecordingTime, remainingTime, customSessionTime]);
   
   // Handle recording synchronization with session timer
   useEffect(() => {
@@ -110,14 +124,16 @@ export function useSessionControls() {
       
       setTimeout(() => {
         startSession();
-        setTotalTime(0);  // Explicitly reset total time
-        setSectionTime(0);  // Explicitly reset section time
+        setElapsedTime(0);  // Reset elapsed time
+        setRemainingTime(customSessionTime * 60);  // Set countdown timer from user selection
+        setSectionTime(0);  // Reset section time
         setIsPaused(false);  // Ensure not paused
       }, 100);
     } else {
       startSession();
-      setTotalTime(0);  // Explicitly reset total time
-      setSectionTime(0);  // Explicitly reset section time
+      setElapsedTime(0);  // Reset elapsed time
+      setRemainingTime(customSessionTime * 60);  // Set countdown timer from user selection
+      setSectionTime(0);  // Reset section time
       setIsPaused(false);  // Ensure not paused
     }
   };
@@ -150,7 +166,7 @@ export function useSessionControls() {
     currentSession,
     currentSection,
     sections,
-    totalTime,
+    totalTime: remainingTime, // Return remaining time as totalTime for display purposes
     isPaused,
     isRecording,
     handleStartSession,
