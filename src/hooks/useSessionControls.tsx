@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useCallback } from 'react';
 import { useSession } from '@/context/SessionContext';
 import { useNavigate } from 'react-router-dom';
@@ -44,8 +43,7 @@ export function useSessionControls() {
       setSectionTime(0); // Reset section timer
       // Removed toast notification
     } else {
-      // Kept the toast for the final section
-      toast.info("You've reached the final section!");
+      // Removed toast for the final section
     }
   }, [currentSection, sections, setCurrentSection]);
   
@@ -56,7 +54,7 @@ export function useSessionControls() {
       const prevSection = sections[currentIndex - 1];
       setCurrentSection(prevSection);
       setSectionTime(0); // Reset section timer
-      // Removed toast notification
+      // Existing toast notification already removed
     } else {
       // Kept the toast for the first section
       toast.info("You're at the first section!");
@@ -162,4 +160,3 @@ export function useSessionControls() {
     handlePauseResumeSession
   };
 }
-
