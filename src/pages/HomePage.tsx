@@ -26,7 +26,7 @@ const HomePage = () => {
                   </Button>
                 </Link>
                 <Link to="/dashboard">
-                  <Button variant="outline" size="lg" className="when hovering on the button, update the text color into #fff">
+                  <Button variant="outline" size="lg" className="text-color hover: #fff">
                     View Dashboard
                   </Button>
                 </Link>
