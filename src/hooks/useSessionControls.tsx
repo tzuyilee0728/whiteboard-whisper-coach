@@ -17,7 +17,8 @@ export function useSessionControls() {
     currentSession,
     startRecording,
     stopRecording,
-    selectChallenge
+    selectChallenge,
+    updateRecordingTime
   } = useSession();
   
   const [totalTime, setTotalTime] = useState(0);
@@ -67,7 +68,12 @@ export function useSessionControls() {
     // Only run timer when session is active and not paused
     if (currentSession && !isPaused) {
       interval = window.setInterval(() => {
-        setTotalTime(prev => prev + 1);
+        setTotalTime(prev => {
+          const newTotal = prev + 1;
+          // Update recording time to match total session time
+          updateRecordingTime(newTotal);
+          return newTotal;
+        });
         setSectionTime(prev => prev + 1);
         
         // Check if section time is up
@@ -81,7 +87,7 @@ export function useSessionControls() {
     return () => {
       if (interval) clearInterval(interval);
     };
-  }, [currentSession, isPaused, currentSection, sectionTime, handleNextSection]);
+  }, [currentSession, isPaused, currentSection, sectionTime, handleNextSection, updateRecordingTime]);
   
   // Handle recording synchronization with session timer
   useEffect(() => {

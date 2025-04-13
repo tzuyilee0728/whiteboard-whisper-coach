@@ -1,3 +1,4 @@
+
 import React, { useState, ReactNode, useEffect } from 'react';
 import { Challenge, Session, WhiteboardSection, AudioRecording, Feedback } from '@/types';
 import { mockChallenges, mockSessions } from '@/services/mockData';
@@ -28,23 +29,8 @@ export const SessionProvider: React.FC<SessionProviderProps> = ({ children }) =>
     final_wrap_up: 0
   });
 
-  // Setup recording timer that's synchronized with the session
-  useEffect(() => {
-    let interval: NodeJS.Timeout | null = null;
-    
-    if (isRecording) {
-      interval = setInterval(() => {
-        setRecordingTime(prev => prev + 1);
-      }, 1000);
-    } else if (!isRecording && interval) {
-      // Don't reset the time when stopping recording
-      // This ensures recording time matches session time
-    }
-    
-    return () => {
-      if (interval) clearInterval(interval);
-    };
-  }, [isRecording]);
+  // We don't need a separate recording timer as we'll use the session timer from useSessionControls
+  // Remove the recording timer effect since it will be synchronized with the session timer
 
   // Handler functions
   const selectChallenge = (challengeId: string) => {
@@ -127,6 +113,13 @@ export const SessionProvider: React.FC<SessionProviderProps> = ({ children }) =>
     setAudioRecordings(prev => [...prev, recording]);
   };
 
+  // Method to update recording time from session time
+  const updateRecordingTime = (time: number) => {
+    if (isRecording) {
+      setRecordingTime(time);
+    }
+  };
+
   // Create a stable context value object
   const contextValue = {
     challenges,
@@ -145,7 +138,8 @@ export const SessionProvider: React.FC<SessionProviderProps> = ({ children }) =>
     startRecording,
     stopRecording,
     updateSectionProgress,
-    addRecording
+    addRecording,
+    updateRecordingTime
   };
 
   // Return the provider with the context value
