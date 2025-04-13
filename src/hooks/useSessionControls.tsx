@@ -42,8 +42,9 @@ export function useSessionControls() {
       const nextSection = sections[currentIndex + 1];
       setCurrentSection(nextSection);
       setSectionTime(0); // Reset section timer
-      toast.success(`Moving to ${sectionTimings[nextSection].title} section`);
+      // Removed toast notification
     } else {
+      // Kept the toast for the final section
       toast.info("You've reached the final section!");
     }
   }, [currentSection, sections, setCurrentSection]);
@@ -55,8 +56,9 @@ export function useSessionControls() {
       const prevSection = sections[currentIndex - 1];
       setCurrentSection(prevSection);
       setSectionTime(0); // Reset section timer
-      toast.success(`Moving to ${sectionTimings[prevSection].title} section`);
+      // Removed toast notification
     } else {
+      // Kept the toast for the first section
       toast.info("You're at the first section!");
     }
   }, [currentSection, sections, setCurrentSection]);
@@ -160,3 +162,4 @@ export function useSessionControls() {
     handlePauseResumeSession
   };
 }
+
