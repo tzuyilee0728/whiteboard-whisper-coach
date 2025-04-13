@@ -4,7 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import ChallengeSelector from '@/components/ChallengeSelector';
 import { Button } from '@/components/ui/button';
-import { Clock, Timer } from 'lucide-react';
+import { Clock, Timer, Plus, Minus } from 'lucide-react';
 import { useSession } from '@/context/SessionContext';
 import { WhiteboardSection } from '@/types';
 import { sectionTimings } from '@/services/mockData';
@@ -15,9 +15,17 @@ interface SessionStartScreenProps {
 }
 
 const SessionStartScreen: React.FC<SessionStartScreenProps> = ({ handleStartSession }) => {
-  const { currentChallenge } = useSession();
+  const { currentChallenge, updateSectionDurations } = useSession();
   const [isCountingDown, setIsCountingDown] = useState(false);
   const [countdown, setCountdown] = useState(5);
+  const [customDurations, setCustomDurations] = useState<Record<WhiteboardSection, number>>({
+    problem_discovery: sectionTimings.problem_discovery.duration,
+    problem_definition: sectionTimings.problem_definition.duration,
+    ideation: sectionTimings.ideation.duration,
+    prioritization: sectionTimings.prioritization.duration,
+    user_flow_wireframe: sectionTimings.user_flow_wireframe.duration,
+    final_wrap_up: sectionTimings.final_wrap_up.duration
+  });
   
   const sections: WhiteboardSection[] = [
     'problem_discovery',
@@ -29,16 +37,33 @@ const SessionStartScreen: React.FC<SessionStartScreenProps> = ({ handleStartSess
   ];
   
   // Calculate total session time in minutes
-  const totalSessionMinutes = Object.values(sectionTimings).reduce(
-    (total, section) => total + section.duration, 
+  const totalSessionMinutes = Object.values(customDurations).reduce(
+    (total, duration) => total + duration, 
     0
   );
+  
+  const handleIncrementTime = (section: WhiteboardSection) => {
+    setCustomDurations(prev => ({
+      ...prev,
+      [section]: prev[section] + 5
+    }));
+  };
+
+  const handleDecrementTime = (section: WhiteboardSection) => {
+    setCustomDurations(prev => ({
+      ...prev,
+      [section]: Math.max(5, prev[section] - 5)
+    }));
+  };
   
   const startCountdown = () => {
     if (!currentChallenge) {
       toast.error("Please select a challenge first");
       return;
     }
+    
+    // Update section durations in context before starting session
+    updateSectionDurations(customDurations);
     
     setIsCountingDown(true);
     setCountdown(5);
@@ -78,7 +103,6 @@ const SessionStartScreen: React.FC<SessionStartScreenProps> = ({ handleStartSess
               {currentChallenge && (
                 <div className="mt-6 border-t pt-4">
                   <h3 className="font-semibold text-lg mb-2">{currentChallenge.title}</h3>
-                  <p className="text-gray-700 mb-4">{currentChallenge.description}</p>
                   
                   <div className="bg-blue-50 rounded-md p-4 mb-6">
                     <AlertTitle className="flex items-center text-blue-800 mb-2">
@@ -86,16 +110,36 @@ const SessionStartScreen: React.FC<SessionStartScreenProps> = ({ handleStartSess
                       Session Structure
                     </AlertTitle>
                     <AlertDescription className="text-blue-800">
-                      <p className="mb-2">This session will guide you through these 6 sections:</p>
-                      <ul className="list-disc pl-5 space-y-1">
+                      <p className="mb-2">Customize duration for each section:</p>
+                      <ul className="space-y-3 mt-4">
                         {sections.map((section) => (
-                          <li key={section}>
+                          <li key={section} className="flex items-center justify-between">
                             <span className="font-medium">{sectionTimings[section].title}</span>
-                            <span className="text-sm text-blue-700"> ({sectionTimings[section].duration} min)</span>
+                            <div className="flex items-center gap-2">
+                              <Button 
+                                variant="outline" 
+                                size="icon" 
+                                className="h-7 w-7"
+                                onClick={() => handleDecrementTime(section)}
+                              >
+                                <Minus className="h-3 w-3" />
+                              </Button>
+                              <span className="w-12 text-center font-medium">
+                                {customDurations[section]} min
+                              </span>
+                              <Button 
+                                variant="outline" 
+                                size="icon" 
+                                className="h-7 w-7"
+                                onClick={() => handleIncrementTime(section)}
+                              >
+                                <Plus className="h-3 w-3" />
+                              </Button>
+                            </div>
                           </li>
                         ))}
                       </ul>
-                      <p className="mt-2">
+                      <p className="mt-4">
                         Total time: <span className="font-medium">{totalSessionMinutes} minutes</span>
                       </p>
                     </AlertDescription>

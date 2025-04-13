@@ -28,6 +28,14 @@ export const SessionProvider: React.FC<SessionProviderProps> = ({ children }) =>
     user_flow_wireframe: 0,
     final_wrap_up: 0
   });
+  const [customSectionDurations, setCustomSectionDurations] = useState<Record<WhiteboardSection, number>>({
+    problem_discovery: 0,
+    problem_definition: 0,
+    ideation: 0,
+    prioritization: 0,
+    user_flow_wireframe: 0,
+    final_wrap_up: 0
+  });
 
   // We don't need a separate recording timer as we'll use the session timer from useSessionControls
   // Remove the recording timer effect since it will be synchronized with the session timer
@@ -119,6 +127,11 @@ export const SessionProvider: React.FC<SessionProviderProps> = ({ children }) =>
       setRecordingTime(time);
     }
   };
+  
+  // New method to update section durations
+  const updateSectionDurations = (durations: Record<WhiteboardSection, number>) => {
+    setCustomSectionDurations(durations);
+  };
 
   // Create a stable context value object
   const contextValue = {
@@ -139,7 +152,8 @@ export const SessionProvider: React.FC<SessionProviderProps> = ({ children }) =>
     stopRecording,
     updateSectionProgress,
     addRecording,
-    updateRecordingTime
+    updateRecordingTime,
+    updateSectionDurations
   };
 
   // Return the provider with the context value

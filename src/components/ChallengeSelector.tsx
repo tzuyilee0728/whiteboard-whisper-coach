@@ -18,15 +18,6 @@ const ChallengeSelector = () => {
     selectChallenge(challengeId);
   };
   
-  const getDifficultyColor = (difficulty: string) => {
-    switch(difficulty) {
-      case 'junior': return 'bg-green-100 text-green-800';
-      case 'mid-level': return 'bg-yellow-100 text-yellow-800';
-      case 'senior': return 'bg-red-100 text-red-800';
-      default: return 'bg-blue-100 text-blue-800';
-    }
-  };
-  
   const getCategoryColor = (category: string) => {
     switch(category) {
       case 'e-commerce': return 'bg-purple-100 text-purple-800';
@@ -57,15 +48,9 @@ const ChallengeSelector = () => {
               <div>
                 <div className="mb-1 font-medium">{challenge.title}</div>
                 <div className="flex gap-2 mb-1">
-                  <Badge variant="outline" className={getDifficultyColor(challenge.difficulty)}>
-                    {challenge.difficulty}
-                  </Badge>
                   <Badge variant="outline" className={getCategoryColor(challenge.category)}>
                     {challenge.category}
                   </Badge>
-                </div>
-                <div className="text-xs text-gray-500 line-clamp-2">
-                  {challenge.description}
                 </div>
               </div>
             </SelectItem>

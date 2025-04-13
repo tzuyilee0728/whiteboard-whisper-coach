@@ -22,6 +22,7 @@ interface SessionContextType {
   updateSectionProgress: (section: WhiteboardSection, progress: number) => void;
   addRecording: (recording: AudioRecording) => void;
   updateRecordingTime: (time: number) => void;
+  updateSectionDurations: (durations: Record<WhiteboardSection, number>) => void;
 }
 
 // Create context with undefined as default value
