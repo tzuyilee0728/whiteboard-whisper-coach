@@ -32,9 +32,10 @@ export interface Feedback {
 export type WhiteboardSection = 
   | 'problem_discovery' 
   | 'problem_definition' 
-  | 'brainstorming' 
-  | 'solution_prioritization' 
-  | 'wireframing';
+  | 'ideation' 
+  | 'prioritization' 
+  | 'user_flow_wireframe' 
+  | 'final_wrap_up';
 
 export interface SectionTiming {
   section: WhiteboardSection;

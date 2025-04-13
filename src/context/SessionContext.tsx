@@ -1,4 +1,3 @@
-
 import React, { createContext, useContext, useState, ReactNode } from 'react';
 import { Challenge, Session, WhiteboardSection, AudioRecording, Feedback } from '@/types';
 import { mockChallenges, mockSessions, sectionTimings, generateMockFeedback } from '@/services/mockData';
@@ -53,9 +52,10 @@ export const SessionProvider: React.FC<SessionProviderProps> = ({ children }) =>
   const [sectionProgress, setSectionProgress] = useState<Record<WhiteboardSection, number>>({
     problem_discovery: 0,
     problem_definition: 0,
-    brainstorming: 0,
-    solution_prioritization: 0,
-    wireframing: 0
+    ideation: 0,
+    prioritization: 0,
+    user_flow_wireframe: 0,
+    final_wrap_up: 0
   });
 
   // Handler functions
@@ -98,9 +98,10 @@ export const SessionProvider: React.FC<SessionProviderProps> = ({ children }) =>
         sectionFeedback: {
           problem_discovery: "No data",
           problem_definition: "No data",
-          brainstorming: "No data",
-          solution_prioritization: "No data",
-          wireframing: "No data"
+          ideation: "No data",
+          prioritization: "No data",
+          user_flow_wireframe: "No data",
+          final_wrap_up: "No data"
         },
         overallRating: 0
       };
@@ -110,9 +111,10 @@ export const SessionProvider: React.FC<SessionProviderProps> = ({ children }) =>
     const sectionFeedback: Record<WhiteboardSection, string> = {
       problem_discovery: generateMockFeedback('problem_discovery'),
       problem_definition: generateMockFeedback('problem_definition'),
-      brainstorming: generateMockFeedback('brainstorming'),
-      solution_prioritization: generateMockFeedback('solution_prioritization'),
-      wireframing: generateMockFeedback('wireframing')
+      ideation: generateMockFeedback('ideation'),
+      prioritization: generateMockFeedback('prioritization'),
+      user_flow_wireframe: generateMockFeedback('user_flow_wireframe'),
+      final_wrap_up: generateMockFeedback('final_wrap_up')
     };
     
     // Generate random strengths and improvements
@@ -234,4 +236,3 @@ export const SessionProvider: React.FC<SessionProviderProps> = ({ children }) =>
     </SessionContext.Provider>
   );
 };
-

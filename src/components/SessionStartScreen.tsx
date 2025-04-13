@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
@@ -22,9 +21,10 @@ const SessionStartScreen: React.FC<SessionStartScreenProps> = ({ handleStartSess
   const sections: WhiteboardSection[] = [
     'problem_discovery',
     'problem_definition',
-    'brainstorming',
-    'solution_prioritization',
-    'wireframing'
+    'ideation',
+    'prioritization',
+    'user_flow_wireframe',
+    'final_wrap_up'
   ];
   
   // Calculate total session time in minutes
@@ -84,7 +84,7 @@ const SessionStartScreen: React.FC<SessionStartScreenProps> = ({ handleStartSess
                       Session Structure
                     </AlertTitle>
                     <AlertDescription className="text-blue-800">
-                      <p className="mb-2">This session will guide you through these 5 sections:</p>
+                      <p className="mb-2">This session will guide you through these 6 sections:</p>
                       <ul className="list-disc pl-5 space-y-1">
                         {sections.map((section) => (
                           <li key={section}>

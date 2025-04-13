@@ -31,23 +31,29 @@ const SectionGuidance: React.FC<SectionGuidanceProps> = ({ section }) => {
       "Identify key user and business needs",
       "Establish constraints and boundaries"
     ],
-    brainstorming: [
+    ideation: [
       "Generate a wide range of potential solutions",
       "Don't evaluate ideas too early - focus on quantity",
       "Consider different approaches and perspectives",
       "Think about both user needs and business goals"
     ],
-    solution_prioritization: [
+    prioritization: [
       "Establish clear criteria for evaluation",
       "Consider impact vs. feasibility",
       "Explain your reasoning for prioritization",
       "Create a roadmap for implementation"
     ],
-    wireframing: [
+    user_flow_wireframe: [
       "Focus on key screens and user flows",
       "Explain your design decisions",
       "Consider edge cases and error states",
       "Show how your solution addresses the core problem"
+    ],
+    final_wrap_up: [
+      "Summarize your approach and solution",
+      "Highlight key decisions and trade-offs",
+      "Discuss potential next steps",
+      "Mention how you would validate your solution"
     ]
   };
   

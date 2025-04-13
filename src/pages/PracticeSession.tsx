@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useSession } from '@/context/SessionContext';
 import NavBar from '@/components/NavBar';
@@ -37,9 +36,10 @@ const PracticeSession = () => {
   const sections: WhiteboardSection[] = [
     'problem_discovery',
     'problem_definition',
-    'brainstorming',
-    'solution_prioritization',
-    'wireframing'
+    'ideation',
+    'prioritization',
+    'user_flow_wireframe',
+    'final_wrap_up'
   ];
 
   // Select a random challenge on component mount
