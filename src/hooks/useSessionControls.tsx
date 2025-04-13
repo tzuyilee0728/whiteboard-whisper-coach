@@ -64,7 +64,6 @@ export function useSessionControls() {
     let interval: number | undefined;
     
     // Only run timer when session is active and not paused
-    // The recording state is now only used for the audio recording timer
     if (currentSession && !isPaused) {
       interval = window.setInterval(() => {
         setTotalTime(prev => prev + 1);
@@ -101,15 +100,15 @@ export function useSessionControls() {
       
       setTimeout(() => {
         startSession();
-        setTotalTime(0);
-        setSectionTime(0);
-        setIsPaused(false);
+        setTotalTime(0);  // Explicitly reset total time
+        setSectionTime(0);  // Explicitly reset section time
+        setIsPaused(false);  // Ensure not paused
       }, 100);
     } else {
       startSession();
-      setTotalTime(0);
-      setSectionTime(0);
-      setIsPaused(false);
+      setTotalTime(0);  // Explicitly reset total time
+      setSectionTime(0);  // Explicitly reset section time
+      setIsPaused(false);  // Ensure not paused
     }
   };
   
