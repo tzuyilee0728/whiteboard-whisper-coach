@@ -1,13 +1,10 @@
-
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { CheckCircle, ArrowRight, Lightbulb, Clock, MessageSquare } from 'lucide-react';
 import NavBar from '@/components/NavBar';
-
 const HomePage = () => {
-  return (
-    <div className="min-h-screen flex flex-col">
+  return <div className="min-h-screen flex flex-col">
       <NavBar />
       
       <main className="flex-grow">
@@ -29,7 +26,7 @@ const HomePage = () => {
                   </Button>
                 </Link>
                 <Link to="/dashboard">
-                  <Button variant="outline" size="lg">
+                  <Button variant="outline" size="lg" className="when hovering on the button, update the text color into #fff">
                     View Dashboard
                   </Button>
                 </Link>
@@ -143,8 +140,6 @@ const HomePage = () => {
           </div>
         </div>
       </footer>
-    </div>
-  );
+    </div>;
 };
-
 export default HomePage;
