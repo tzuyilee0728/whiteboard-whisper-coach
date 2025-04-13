@@ -1,3 +1,4 @@
+
 import { useState, useEffect, useCallback } from 'react';
 import { useSession } from '@/context/SessionContext';
 import { useNavigate } from 'react-router-dom';
@@ -22,7 +23,7 @@ export function useSessionControls() {
   } = useSession();
   
   const [elapsedTime, setElapsedTime] = useState(0);
-  const [remainingTime, setRemainingTime] = useState(0); // Initialize to 0, will be set properly when session starts
+  const [remainingTime, setRemainingTime] = useState(0);
   const [sectionTime, setSectionTime] = useState(0);
   const [isPaused, setIsPaused] = useState(false);
   const navigate = useNavigate();
@@ -58,14 +59,19 @@ export function useSessionControls() {
     }
   }, [currentSection, sections, setCurrentSection]);
 
+  // Reset timers when session starts - separate effect to watch for session status changes
+  useEffect(() => {
+    if (currentSession && !isPaused && remainingTime === 0) {
+      // Initialize remaining time when session first starts
+      setRemainingTime(customSessionTime * 60);
+      setElapsedTime(0);
+      setSectionTime(0);
+    }
+  }, [currentSession, customSessionTime, isPaused, remainingTime]);
+
   // Handle timer logic - countdown from set time
   useEffect(() => {
     let interval: number | undefined;
-    
-    // Initialize the remaining time when session starts
-    if (currentSession && !isPaused && remainingTime === 0) {
-      setRemainingTime(customSessionTime * 60);
-    }
     
     // Only run timer when session is active and not paused
     if (currentSession && !isPaused) {
@@ -123,17 +129,19 @@ export function useSessionControls() {
       
       setTimeout(() => {
         startSession();
-        setElapsedTime(0);  // Reset elapsed time
-        setRemainingTime(customSessionTime * 60);  // Reset timer with CURRENT customSessionTime value
-        setSectionTime(0);  // Reset section time
-        setIsPaused(false);  // Ensure not paused
+        // Explicitly set the remaining time with the current customSessionTime value
+        setRemainingTime(customSessionTime * 60);
+        setElapsedTime(0);
+        setSectionTime(0);
+        setIsPaused(false);
       }, 100);
     } else {
       startSession();
-      setElapsedTime(0);  // Reset elapsed time
-      setRemainingTime(customSessionTime * 60);  // Reset timer with CURRENT customSessionTime value
-      setSectionTime(0);  // Reset section time
-      setIsPaused(false);  // Ensure not paused
+      // Explicitly set the remaining time with the current customSessionTime value
+      setRemainingTime(customSessionTime * 60);
+      setElapsedTime(0);
+      setSectionTime(0);
+      setIsPaused(false);
     }
   };
   
