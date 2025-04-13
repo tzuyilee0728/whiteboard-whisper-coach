@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useCallback } from 'react';
 import { useSession } from '@/context/SessionContext';
 import { useNavigate } from 'react-router-dom';
@@ -23,7 +22,7 @@ export function useSessionControls() {
   } = useSession();
   
   const [elapsedTime, setElapsedTime] = useState(0);
-  const [remainingTime, setRemainingTime] = useState(customSessionTime * 60); // Convert minutes to seconds
+  const [remainingTime, setRemainingTime] = useState(customSessionTime * 60); // Use customSessionTime directly
   const [sectionTime, setSectionTime] = useState(0);
   const [isPaused, setIsPaused] = useState(false);
   const navigate = useNavigate();
