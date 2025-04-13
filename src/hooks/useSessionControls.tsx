@@ -22,7 +22,7 @@ export function useSessionControls() {
   } = useSession();
   
   const [elapsedTime, setElapsedTime] = useState(0);
-  const [remainingTime, setRemainingTime] = useState(0); // Initialize to 0, will set properly on session start
+  const [remainingTime, setRemainingTime] = useState(0); // Initialize to 0, will be set properly when session starts
   const [sectionTime, setSectionTime] = useState(0);
   const [isPaused, setIsPaused] = useState(false);
   const navigate = useNavigate();
@@ -61,6 +61,11 @@ export function useSessionControls() {
   // Handle timer logic - countdown from set time
   useEffect(() => {
     let interval: number | undefined;
+    
+    // Initialize the remaining time when session starts
+    if (currentSession && !isPaused && remainingTime === 0) {
+      setRemainingTime(customSessionTime * 60);
+    }
     
     // Only run timer when session is active and not paused
     if (currentSession && !isPaused) {
@@ -117,18 +122,16 @@ export function useSessionControls() {
       selectChallenge(randomChallenge.id);
       
       setTimeout(() => {
-        // Set remaining time immediately before starting the session
-        setRemainingTime(customSessionTime * 60);
         startSession();
         setElapsedTime(0);  // Reset elapsed time
+        setRemainingTime(customSessionTime * 60);  // Reset timer with CURRENT customSessionTime value
         setSectionTime(0);  // Reset section time
         setIsPaused(false);  // Ensure not paused
       }, 100);
     } else {
-      // Set remaining time immediately before starting the session
-      setRemainingTime(customSessionTime * 60);
       startSession();
       setElapsedTime(0);  // Reset elapsed time
+      setRemainingTime(customSessionTime * 60);  // Reset timer with CURRENT customSessionTime value
       setSectionTime(0);  // Reset section time
       setIsPaused(false);  // Ensure not paused
     }
