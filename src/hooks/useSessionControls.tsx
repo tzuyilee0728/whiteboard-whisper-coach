@@ -96,18 +96,15 @@ export function useSessionControls() {
         
         setSectionTime(prev => prev + 1);
         
-        // Check if section time is up
-        const currentSectionTiming = sectionTimings[currentSection]?.duration || 300;
-        if (sectionTime >= currentSectionTiming) {
-          handleNextSection();
-        }
+        // Removed the automatic section change based on time
+        // Now we only track time but don't automatically change sections
       }, 1000);
     }
     
     return () => {
       if (interval) clearInterval(interval);
     };
-  }, [currentSession, isPaused, currentSection, sectionTime, handleNextSection, initialTotalTime, updateRecordingTime, endSession]);
+  }, [currentSession, isPaused, currentSection, initialTotalTime, updateRecordingTime, endSession]);
   
   // Handle recording synchronization with session timer
   useEffect(() => {
