@@ -1,8 +1,6 @@
 
 import React from 'react';
 import { Card, CardContent } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { PlayCircle, PauseCircle, StopCircle } from 'lucide-react';
 import { useSession } from '@/context/SessionContext';
 
 interface SessionHeaderProps {
@@ -11,6 +9,7 @@ interface SessionHeaderProps {
   totalTime: number;
   isRecording: boolean;
   handleEndSession: () => void;
+  showControls?: boolean;
 }
 
 const SessionHeader: React.FC<SessionHeaderProps> = ({
@@ -18,9 +17,10 @@ const SessionHeader: React.FC<SessionHeaderProps> = ({
   description,
   totalTime,
   isRecording,
-  handleEndSession
+  handleEndSession,
+  showControls = true // Default to showing controls
 }) => {
-  const { isPaused, handlePauseResumeSession } = useSession();
+  const { isPaused } = useSession();
   
   // Format time as MM:SS
   const formatTime = (seconds: number): string => {
@@ -33,11 +33,7 @@ const SessionHeader: React.FC<SessionHeaderProps> = ({
   const formatTotalTime = (seconds: number): string => {
     const mins = Math.floor(seconds / 60);
     const remainingSecs = seconds % 60;
-    return mins === 0 
-      ? `${remainingSecs} sec` 
-      : remainingSecs === 0 
-        ? `${mins} min` 
-        : `${mins} min ${remainingSecs} sec`;
+    return `${mins} min\n${remainingSecs} sec`;
   };
   
   return (
@@ -53,40 +49,9 @@ const SessionHeader: React.FC<SessionHeaderProps> = ({
         <CardContent className="flex items-center justify-between gap-4 pt-6">
           <div>
             <div className="text-sm text-gray-500">Time Remaining</div>
-            <div className={`timer-text ${isPaused ? 'text-amber-500' : 'text-blue-600 font-semibold'}`}>
+            <div className={`timer-text ${isPaused ? 'text-amber-500' : 'text-amber-500 font-semibold'}`} style={{whiteSpace: 'pre-line'}}>
               {formatTotalTime(totalTime)}
             </div>
-          </div>
-          
-          <div className="flex flex-col gap-2">
-            <Button 
-              onClick={handlePauseResumeSession}
-              variant="outline"
-              size="sm"
-              className="flex items-center gap-1"
-            >
-              {isPaused ? (
-                <>
-                  <PlayCircle className="h-4 w-4" />
-                  Resume
-                </>
-              ) : (
-                <>
-                  <PauseCircle className="h-4 w-4" />
-                  Pause
-                </>
-              )}
-            </Button>
-            
-            <Button 
-              onClick={handleEndSession} 
-              variant="destructive"
-              size="sm"
-              className="flex items-center gap-1"
-            >
-              <StopCircle className="h-4 w-4" />
-              End
-            </Button>
           </div>
         </CardContent>
       </Card>

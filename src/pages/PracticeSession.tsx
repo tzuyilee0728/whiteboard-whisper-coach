@@ -6,6 +6,7 @@ import SessionHeader from '@/components/SessionHeader';
 import SessionControls from '@/components/SessionControls';
 import SessionContent from '@/components/SessionContent';
 import PracticeSessionFooter from '@/components/PracticeSessionFooter';
+import SessionFixedControls from '@/components/SessionFixedControls';
 import { useSessionControls } from '@/hooks/useSessionControls';
 import SessionShareButton from '@/components/SessionShareButton';
 
@@ -17,20 +18,18 @@ const PracticeSession = () => {
     sections,
     totalTime,
     initialTotalTime,
-    isPaused,
     isRecording,
     handleStartSession,
     handleEndSession,
     handleNextSection,
     handlePrevSection,
-    handlePauseResumeSession
   } = useSessionControls();
   
   return (
     <div className="min-h-screen flex flex-col bg-gray-50">
       <NavBar />
       
-      <div className="flex-grow container mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <div className="flex-grow container mx-auto px-4 sm:px-6 lg:px-8 py-8 pb-24">
         <div className="flex justify-between items-center mb-6">
           <div>
             <h1 className="text-3xl font-bold text-gray-900 mb-2">Practice Session</h1>
@@ -52,6 +51,7 @@ const PracticeSession = () => {
               totalTime={totalTime}
               isRecording={isRecording}
               handleEndSession={handleEndSession}
+              showControls={false} // Hide the controls in the header
             />
             
             <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
@@ -62,10 +62,14 @@ const PracticeSession = () => {
                 handleNextSection={handleNextSection}
                 totalTime={totalTime}
                 initialTime={initialTotalTime}
+                hideRecorder={true} // Hide the recorder component
               />
               
               <SessionContent />
             </div>
+
+            {/* Add fixed controls at bottom */}
+            {currentSession && <SessionFixedControls handleEndSession={handleEndSession} />}
           </div>
         )}
       </div>

@@ -13,6 +13,7 @@ interface SessionControlsProps {
   handleNextSection: () => void;
   totalTime?: number;
   initialTime?: number;
+  hideRecorder?: boolean;
 }
 
 const SessionControls: React.FC<SessionControlsProps> = ({
@@ -21,7 +22,8 @@ const SessionControls: React.FC<SessionControlsProps> = ({
   handlePrevSection,
   handleNextSection,
   totalTime,
-  initialTime
+  initialTime,
+  hideRecorder = false
 }) => {
   return (
     <div className="lg:col-span-1 space-y-4">
@@ -60,7 +62,7 @@ const SessionControls: React.FC<SessionControlsProps> = ({
         </div>
       </div>
       
-      <AudioRecorder />
+      {!hideRecorder && <AudioRecorder />}
     </div>
   );
 };
