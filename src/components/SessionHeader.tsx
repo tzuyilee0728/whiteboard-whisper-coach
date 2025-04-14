@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { useSession } from '@/context/SessionContext';
@@ -18,22 +17,14 @@ const SessionHeader: React.FC<SessionHeaderProps> = ({
   totalTime,
   isRecording,
   handleEndSession,
-  showControls = true // Default to showing controls
+  showControls = true
 }) => {
   const { isPaused } = useSession();
   
-  // Format time as MM:SS
   const formatTime = (seconds: number): string => {
     const mins = Math.floor(seconds / 60);
     const secs = seconds % 60;
     return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
-  };
-  
-  // Format time as minutes and seconds
-  const formatTotalTime = (seconds: number): string => {
-    const mins = Math.floor(seconds / 60);
-    const remainingSecs = seconds % 60;
-    return `${mins} min\n${remainingSecs} sec`;
   };
   
   return (
@@ -49,8 +40,8 @@ const SessionHeader: React.FC<SessionHeaderProps> = ({
         <CardContent className="flex items-center justify-between gap-4 pt-6">
           <div>
             <div className="text-sm text-gray-500">Time Remaining</div>
-            <div className={`timer-text ${isPaused ? 'text-amber-500' : 'text-amber-500 font-semibold'}`} style={{whiteSpace: 'pre-line'}}>
-              {formatTotalTime(totalTime)}
+            <div className={`timer-text ${isPaused ? 'text-amber-500' : 'text-amber-500 font-semibold'}`}>
+              {formatTime(totalTime)}
             </div>
           </div>
         </CardContent>
