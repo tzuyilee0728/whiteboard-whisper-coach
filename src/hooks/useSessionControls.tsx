@@ -28,6 +28,7 @@ export function useSessionControls() {
   const [totalTime, setTotalTime] = useState(initialTotalTime);
   const [sectionTime, setSectionTime] = useState(0);
   const [isPaused, setIsPaused] = useState(false);
+  const [sessionProgress, setSessionProgress] = useState(0);
   const navigate = useNavigate();
   
   const sections: WhiteboardSection[] = [
@@ -46,9 +47,6 @@ export function useSessionControls() {
       const nextSection = sections[currentIndex + 1];
       setCurrentSection(nextSection);
       setSectionTime(0); // Reset section timer
-      // Removed toast notification
-    } else {
-      // Removed toast for the final section
     }
   }, [currentSection, sections, setCurrentSection]);
   
@@ -59,12 +57,19 @@ export function useSessionControls() {
       const prevSection = sections[currentIndex - 1];
       setCurrentSection(prevSection);
       setSectionTime(0); // Reset section timer
-      // Existing toast notification already removed
     } else {
-      // Kept the toast for the first section
       toast.info("You're at the first section!");
     }
   }, [currentSection, sections, setCurrentSection]);
+
+  // Calculate session progress based on elapsed time
+  useEffect(() => {
+    if (currentSession && initialTotalTime > 0) {
+      const elapsed = initialTotalTime - totalTime;
+      const progress = Math.min(100, (elapsed / initialTotalTime) * 100);
+      setSessionProgress(progress);
+    }
+  }, [totalTime, initialTotalTime, currentSession]);
 
   // Handle timer logic - responsive to session and recording states
   useEffect(() => {
@@ -121,6 +126,7 @@ export function useSessionControls() {
       // Initialize with the custom session time in seconds
       setTotalTime(customSessionTime * 60);
       setSectionTime(0);
+      setSessionProgress(0);
     }
   }, [currentSession, customSessionTime]);
   
@@ -177,6 +183,7 @@ export function useSessionControls() {
     totalTime,
     isPaused,
     isRecording,
+    sessionProgress,
     handleStartSession,
     handleEndSession,
     handleNextSection,
