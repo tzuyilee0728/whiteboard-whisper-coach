@@ -5,20 +5,14 @@ import { WhiteboardSection } from '@/types';
 import { sectionTimings } from '@/services/mockData';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { HelpCircle, ChevronDown, ChevronUp, ArrowLeft, ArrowRight } from 'lucide-react';
+import { HelpCircle, ChevronDown, ChevronUp } from 'lucide-react';
 import { Progress } from '@/components/ui/progress';
 
 interface SectionGuidanceProps {
   section: WhiteboardSection;
-  handlePrevSection?: () => void;
-  handleNextSection?: () => void;
 }
 
-const SectionGuidance: React.FC<SectionGuidanceProps> = ({ 
-  section,
-  handlePrevSection,
-  handleNextSection
-}) => {
+const SectionGuidance: React.FC<SectionGuidanceProps> = ({ section }) => {
   const { currentSection } = useSession();
   const [expanded, setExpanded] = useState(false);
   
@@ -95,31 +89,6 @@ const SectionGuidance: React.FC<SectionGuidanceProps> = ({
           </ul>
         </div>
       )}
-      
-      {/* Navigation Buttons */}
-      <div className="flex justify-between mt-6">
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={handlePrevSection}
-          className="flex items-center gap-1"
-          disabled={!handlePrevSection}
-        >
-          <ArrowLeft className="h-4 w-4" />
-          Previous
-        </Button>
-        
-        <Button
-          variant="outline" 
-          size="sm"
-          onClick={handleNextSection}
-          className="flex items-center gap-1"
-          disabled={!handleNextSection}
-        >
-          Next
-          <ArrowRight className="h-4 w-4" />
-        </Button>
-      </div>
     </div>
   );
 };

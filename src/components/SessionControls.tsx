@@ -14,9 +14,7 @@ interface SessionControlsProps {
 
 const SessionControls: React.FC<SessionControlsProps> = ({
   sections,
-  currentSection,
-  handlePrevSection,
-  handleNextSection
+  currentSection
 }) => {
   return (
     <div className="lg:col-span-1 space-y-4">
@@ -28,11 +26,7 @@ const SessionControls: React.FC<SessionControlsProps> = ({
         <SessionProgressBar sections={sections} />
         
         <div className="space-y-2">
-          <SectionGuidance 
-            section={currentSection}
-            handlePrevSection={handlePrevSection}
-            handleNextSection={handleNextSection}
-          />
+          <SectionGuidance section={currentSection} />
         </div>
       </div>
       

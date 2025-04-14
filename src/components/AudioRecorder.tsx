@@ -42,7 +42,7 @@ const AudioRecorder = () => {
             ) : (
               <p className="text-sm text-gray-500">
                 {currentSession ? 
-                  "Recording stopped. Session paused." : 
+                  "Recording stopped. Timer paused." : 
                   "Recording will start automatically when session begins"}
               </p>
             )}

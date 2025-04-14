@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useCallback } from 'react';
 import { useSession } from '@/context/SessionContext';
 import { useNavigate } from 'react-router-dom';
@@ -18,12 +17,10 @@ export function useSessionControls() {
     startRecording,
     stopRecording,
     selectChallenge,
-    updateRecordingTime,
-    customSessionTime
+    updateRecordingTime
   } = useSession();
   
-  const [elapsedTime, setElapsedTime] = useState(0);
-  const [remainingTime, setRemainingTime] = useState(customSessionTime * 60); // Convert minutes to seconds
+  const [totalTime, setTotalTime] = useState(0);
   const [sectionTime, setSectionTime] = useState(0);
   const [isPaused, setIsPaused] = useState(false);
   const navigate = useNavigate();
@@ -44,6 +41,9 @@ export function useSessionControls() {
       const nextSection = sections[currentIndex + 1];
       setCurrentSection(nextSection);
       setSectionTime(0); // Reset section timer
+      // Removed toast notification
+    } else {
+      // Removed toast for the final section
     }
   }, [currentSection, sections, setCurrentSection]);
   
@@ -54,35 +54,26 @@ export function useSessionControls() {
       const prevSection = sections[currentIndex - 1];
       setCurrentSection(prevSection);
       setSectionTime(0); // Reset section timer
+      // Existing toast notification already removed
     } else {
+      // Kept the toast for the first section
       toast.info("You're at the first section!");
     }
   }, [currentSection, sections, setCurrentSection]);
 
-  // Handle timer logic - countdown from set time
+  // Handle timer logic - responsive to session and recording states
   useEffect(() => {
     let interval: number | undefined;
-    
-    // Initialize the remaining time when session starts
-    if (currentSession && remainingTime === 0) {
-      setRemainingTime(customSessionTime * 60);
-    }
     
     // Only run timer when session is active and not paused
     if (currentSession && !isPaused) {
       interval = window.setInterval(() => {
-        setElapsedTime(prev => {
-          const newElapsed = prev + 1;
-          // Update recording time to match elapsed session time
-          updateRecordingTime(newElapsed);
-          return newElapsed;
+        setTotalTime(prev => {
+          const newTotal = prev + 1;
+          // Update recording time to match total session time
+          updateRecordingTime(newTotal);
+          return newTotal;
         });
-        
-        setRemainingTime(prev => {
-          // Ensure we don't go below zero
-          return prev > 0 ? prev - 1 : 0;
-        });
-        
         setSectionTime(prev => prev + 1);
         
         // Check if section time is up
@@ -90,22 +81,16 @@ export function useSessionControls() {
         if (sectionTime >= currentSectionTiming) {
           handleNextSection();
         }
-        
-        // Check if total time is up
-        if (remainingTime <= 1) {
-          toast.info("Your session time is up! You can continue or end the session.");
-        }
       }, 1000);
     }
     
     return () => {
       if (interval) clearInterval(interval);
     };
-  }, [currentSession, isPaused, currentSection, sectionTime, handleNextSection, updateRecordingTime, remainingTime, customSessionTime]);
+  }, [currentSession, isPaused, currentSection, sectionTime, handleNextSection, updateRecordingTime]);
   
-  // Handle recording separately from the timer effect to avoid render phase updates
+  // Handle recording synchronization with session timer
   useEffect(() => {
-    // Only execute recording state changes in an effect, not during rendering
     if (currentSession && !isPaused && !isRecording) {
       // Start recording automatically when session starts or resumes
       startRecording();
@@ -123,65 +108,49 @@ export function useSessionControls() {
       const randomChallenge = mockChallenges[randomIndex];
       selectChallenge(randomChallenge.id);
       
-      // Use setTimeout to ensure challenge is selected before starting session
       setTimeout(() => {
-        // Initialize remaining time with current customSessionTime
-        setRemainingTime(customSessionTime * 60);
-        setElapsedTime(0);  // Reset elapsed time
-        setSectionTime(0);  // Reset section time
-        setIsPaused(false); // Ensure not paused
         startSession();
+        setTotalTime(0);  // Explicitly reset total time
+        setSectionTime(0);  // Explicitly reset section time
+        setIsPaused(false);  // Ensure not paused
       }, 100);
     } else {
-      // Initialize remaining time with current customSessionTime
-      setRemainingTime(customSessionTime * 60);
-      setElapsedTime(0);  // Reset elapsed time
-      setSectionTime(0);  // Reset section time
-      setIsPaused(false); // Ensure not paused
       startSession();
+      setTotalTime(0);  // Explicitly reset total time
+      setSectionTime(0);  // Explicitly reset section time
+      setIsPaused(false);  // Ensure not paused
     }
   };
   
   // Handle ending the session
   const handleEndSession = () => {
-    // Stop recording first if needed
     if (isRecording) {
       stopRecording();
     }
     
-    // Then end session
     endSession();
     navigate('/dashboard');
   };
   
   // Handle pausing and resuming the session
-  const handlePauseResumeSession = useCallback(() => {
-    const newPausedState = !isPaused;
-    setIsPaused(newPausedState);
+  const handlePauseResumeSession = () => {
+    setIsPaused(!isPaused);
     
-    // Handle recording state change after paused state is updated
-    // to avoid race conditions
-    if (newPausedState) {
-      // Pausing - stop recording
-      if (isRecording) {
-        stopRecording();
-      }
-      toast("Session paused");
-    } else {
-      // Resuming - start recording
-      if (!isRecording) {
-        startRecording();
-      }
+    if (isPaused) {
+      // Resuming - recording will be handled by the effect above
       toast("Session resumed");
+    } else {
+      // Pausing - recording will be handled by the effect above
+      toast("Session paused");
     }
-  }, [isPaused, isRecording, startRecording, stopRecording]);
+  };
 
   return {
     currentChallenge,
     currentSession,
     currentSection,
     sections,
-    totalTime: remainingTime, // Return remaining time as totalTime for display purposes
+    totalTime,
     isPaused,
     isRecording,
     handleStartSession,
