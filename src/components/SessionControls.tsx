@@ -4,20 +4,30 @@ import SectionGuidance from '@/components/SectionGuidance';
 import AudioRecorder from '@/components/AudioRecorder';
 import { WhiteboardSection } from '@/types';
 import SessionProgressBar from './SessionProgressBar';
+import { Button } from '@/components/ui/button';
 
 interface SessionControlsProps {
   sections: WhiteboardSection[];
   currentSection: WhiteboardSection;
   handlePrevSection: () => void;
   handleNextSection: () => void;
+  totalTime?: number;
+  initialTime?: number;
 }
 
 const SessionControls: React.FC<SessionControlsProps> = ({
   sections,
   currentSection,
   handlePrevSection,
-  handleNextSection
+  handleNextSection,
+  totalTime,
+  initialTime
 }) => {
+  // Calculate progress percentage
+  const progressPercentage = initialTime && totalTime 
+    ? Math.max(0, Math.min(100, 100 - ((totalTime / initialTime) * 100)))
+    : 0;
+
   return (
     <div className="lg:col-span-1 space-y-4">
       <div className="bg-white p-4 rounded-lg shadow">
@@ -57,18 +67,3 @@ const SessionControls: React.FC<SessionControlsProps> = ({
 };
 
 export default SessionControls;
-
-function Button({ children, onClick, variant, size, className }) {
-  return (
-    <button 
-      onClick={onClick}
-      className={`px-3 py-1 rounded ${
-        variant === 'outline' 
-          ? 'border border-gray-300 hover:bg-gray-50' 
-          : 'bg-blue-600 text-white hover:bg-blue-700'
-      } ${size === 'sm' ? 'text-sm' : ''} ${className}`}
-    >
-      {children}
-    </button>
-  );
-}

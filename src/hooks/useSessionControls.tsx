@@ -28,6 +28,7 @@ export function useSessionControls() {
   const [totalTime, setTotalTime] = useState(initialTotalTime);
   const [sectionTime, setSectionTime] = useState(0);
   const [isPaused, setIsPaused] = useState(false);
+  const [sessionProgress, setSessionProgress] = useState(0);
   const navigate = useNavigate();
   
   const sections: WhiteboardSection[] = [
@@ -38,6 +39,14 @@ export function useSessionControls() {
     'user_flow_wireframe',
     'final_wrap_up'
   ];
+  
+  // Calculate session progress percentage
+  useEffect(() => {
+    if (currentSession) {
+      const progress = Math.max(0, Math.min(100, 100 - ((totalTime / initialTotalTime) * 100)));
+      setSessionProgress(progress);
+    }
+  }, [totalTime, initialTotalTime, currentSession]);
 
   // Function to move to the next section
   const handleNextSection = useCallback(() => {
@@ -46,9 +55,8 @@ export function useSessionControls() {
       const nextSection = sections[currentIndex + 1];
       setCurrentSection(nextSection);
       setSectionTime(0); // Reset section timer
-      // Removed toast notification
     } else {
-      // Removed toast for the final section
+      toast.info("You're at the final section!");
     }
   }, [currentSection, sections, setCurrentSection]);
   
@@ -59,9 +67,7 @@ export function useSessionControls() {
       const prevSection = sections[currentIndex - 1];
       setCurrentSection(prevSection);
       setSectionTime(0); // Reset section timer
-      // Existing toast notification already removed
     } else {
-      // Kept the toast for the first section
       toast.info("You're at the first section!");
     }
   }, [currentSection, sections, setCurrentSection]);
@@ -90,19 +96,13 @@ export function useSessionControls() {
         });
         
         setSectionTime(prev => prev + 1);
-        
-        // Check if section time is up
-        const currentSectionTiming = sectionTimings[currentSection]?.duration || 300;
-        if (sectionTime >= currentSectionTiming) {
-          handleNextSection();
-        }
       }, 1000);
     }
     
     return () => {
       if (interval) clearInterval(interval);
     };
-  }, [currentSession, isPaused, currentSection, sectionTime, handleNextSection, initialTotalTime, updateRecordingTime, endSession]);
+  }, [currentSession, isPaused, initialTotalTime, updateRecordingTime, endSession]);
   
   // Handle recording synchronization with session timer
   useEffect(() => {
@@ -175,8 +175,10 @@ export function useSessionControls() {
     currentSection,
     sections,
     totalTime,
+    initialTotalTime,
     isPaused,
     isRecording,
+    sessionProgress,
     handleStartSession,
     handleEndSession,
     handleNextSection,

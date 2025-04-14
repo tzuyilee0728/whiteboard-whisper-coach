@@ -16,6 +16,7 @@ const PracticeSession = () => {
     currentSection,
     sections,
     totalTime,
+    initialTotalTime,
     isPaused,
     isRecording,
     handleStartSession,
@@ -61,6 +62,8 @@ const PracticeSession = () => {
                 currentSection={currentSection}
                 handlePrevSection={handlePrevSection}
                 handleNextSection={handleNextSection}
+                totalTime={totalTime}
+                initialTime={initialTotalTime}
               />
               
               <SessionContent />
