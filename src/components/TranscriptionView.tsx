@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Mic, AlertTriangle } from 'lucide-react';
 import { useSession } from '@/context/SessionContext';
@@ -40,7 +41,7 @@ const TranscriptionView = () => {
   }, [isRecording]);
 
   return (
-    <div className="h-full flex flex-col">
+    <div className="h-full flex flex-col bg-white rounded-lg border shadow-sm p-4">
       <div className="flex items-center text-lg mb-4">
         <Mic className="h-5 w-5 mr-2" />
         Live Transcription
