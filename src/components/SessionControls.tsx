@@ -4,7 +4,6 @@ import SectionGuidance from '@/components/SectionGuidance';
 import AudioRecorder from '@/components/AudioRecorder';
 import { WhiteboardSection } from '@/types';
 import SessionProgressBar from './SessionProgressBar';
-import { Button } from '@/components/ui/button';
 
 interface SessionControlsProps {
   sections: WhiteboardSection[];
@@ -58,3 +57,18 @@ const SessionControls: React.FC<SessionControlsProps> = ({
 };
 
 export default SessionControls;
+
+function Button({ children, onClick, variant, size, className }) {
+  return (
+    <button 
+      onClick={onClick}
+      className={`px-3 py-1 rounded ${
+        variant === 'outline' 
+          ? 'border border-gray-300 hover:bg-gray-50' 
+          : 'bg-blue-600 text-white hover:bg-blue-700'
+      } ${size === 'sm' ? 'text-sm' : ''} ${className}`}
+    >
+      {children}
+    </button>
+  );
+}
