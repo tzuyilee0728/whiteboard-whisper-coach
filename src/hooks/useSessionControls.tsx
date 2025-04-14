@@ -1,3 +1,4 @@
+
 import { useState, useEffect, useCallback } from 'react';
 import { useSession } from '@/context/SessionContext';
 import { useNavigate } from 'react-router-dom';
@@ -22,7 +23,7 @@ export function useSessionControls() {
   } = useSession();
   
   const [elapsedTime, setElapsedTime] = useState(0);
-  const [remainingTime, setRemainingTime] = useState(0); // Initialize to 0, will set properly on session start
+  const [remainingTime, setRemainingTime] = useState(customSessionTime * 60); // Convert minutes to seconds
   const [sectionTime, setSectionTime] = useState(0);
   const [isPaused, setIsPaused] = useState(false);
   const navigate = useNavigate();
@@ -61,6 +62,11 @@ export function useSessionControls() {
   // Handle timer logic - countdown from set time
   useEffect(() => {
     let interval: number | undefined;
+    
+    // Initialize the remaining time when session starts
+    if (currentSession && remainingTime === 0) {
+      setRemainingTime(customSessionTime * 60);
+    }
     
     // Only run timer when session is active and not paused
     if (currentSession && !isPaused) {
@@ -117,18 +123,16 @@ export function useSessionControls() {
       selectChallenge(randomChallenge.id);
       
       setTimeout(() => {
-        // Set remaining time immediately before starting the session
-        setRemainingTime(customSessionTime * 60);
         startSession();
         setElapsedTime(0);  // Reset elapsed time
+        setRemainingTime(customSessionTime * 60);  // Set countdown timer from user selection
         setSectionTime(0);  // Reset section time
         setIsPaused(false);  // Ensure not paused
       }, 100);
     } else {
-      // Set remaining time immediately before starting the session
-      setRemainingTime(customSessionTime * 60);
       startSession();
       setElapsedTime(0);  // Reset elapsed time
+      setRemainingTime(customSessionTime * 60);  // Set countdown timer from user selection
       setSectionTime(0);  // Reset section time
       setIsPaused(false);  // Ensure not paused
     }
