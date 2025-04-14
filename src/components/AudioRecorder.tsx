@@ -11,7 +11,9 @@ const AudioRecorder = () => {
     recordingTime, 
     startRecording, 
     stopRecording, 
-    currentSession 
+    currentSession,
+    isPaused,
+    handlePauseResumeSession
   } = useSession();
   
   // Format recording time
@@ -19,6 +21,23 @@ const AudioRecorder = () => {
     const mins = Math.floor(seconds / 60);
     const secs = seconds % 60;
     return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+  };
+  
+  // Combined handler to pause/resume both session and recording
+  const handleRecordingToggle = () => {
+    if (isRecording) {
+      stopRecording();
+      // If session isn't already paused, pause it
+      if (!isPaused) {
+        handlePauseResumeSession();
+      }
+    } else {
+      startRecording();
+      // If session is paused, resume it
+      if (isPaused) {
+        handlePauseResumeSession();
+      }
+    }
   };
   
   return (
@@ -49,7 +68,7 @@ const AudioRecorder = () => {
           </div>
           
           <Button
-            onClick={isRecording ? stopRecording : startRecording}
+            onClick={handleRecordingToggle}
             variant={isRecording ? "destructive" : "default"}
             className={`w-full ${!isRecording ? 'bg-brand-600 hover:bg-brand-700' : ''}`}
             disabled={!currentSession}

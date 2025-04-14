@@ -50,9 +50,7 @@ const PracticeSession = () => {
               title={currentChallenge?.title || ''}
               description={currentChallenge?.description || ''}
               totalTime={totalTime}
-              isPaused={isPaused}
               isRecording={isRecording}
-              handlePauseResumeSession={handlePauseResumeSession}
               handleEndSession={handleEndSession}
             />
             

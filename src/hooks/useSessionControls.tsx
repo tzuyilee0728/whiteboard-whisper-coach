@@ -19,7 +19,9 @@ export function useSessionControls() {
     stopRecording,
     selectChallenge,
     updateRecordingTime,
-    customSessionTime
+    customSessionTime,
+    isPaused,
+    handlePauseResumeSession
   } = useSession();
   
   // Convert customSessionTime from minutes to seconds
@@ -27,7 +29,6 @@ export function useSessionControls() {
   
   const [totalTime, setTotalTime] = useState(initialTotalTime);
   const [sectionTime, setSectionTime] = useState(0);
-  const [isPaused, setIsPaused] = useState(false);
   const [sessionProgress, setSessionProgress] = useState(0);
   const navigate = useNavigate();
   
@@ -104,17 +105,6 @@ export function useSessionControls() {
     };
   }, [currentSession, isPaused, initialTotalTime, updateRecordingTime, endSession]);
   
-  // Handle recording synchronization with session timer
-  useEffect(() => {
-    if (currentSession && !isPaused && !isRecording) {
-      // Start recording automatically when session starts or resumes
-      startRecording();
-    } else if ((isPaused || !currentSession) && isRecording) {
-      // Stop recording when session pauses or ends
-      stopRecording();
-    }
-  }, [currentSession, isPaused, isRecording, startRecording, stopRecording]);
-  
   // Reset timers when session starts
   useEffect(() => {
     if (currentSession) {
@@ -136,37 +126,18 @@ export function useSessionControls() {
         startSession();
         setTotalTime(customSessionTime * 60);  // Initialize with custom time in seconds
         setSectionTime(0);  // Explicitly reset section time
-        setIsPaused(false);  // Ensure not paused
       }, 100);
     } else {
       startSession();
       setTotalTime(customSessionTime * 60);  // Initialize with custom time in seconds
       setSectionTime(0);  // Explicitly reset section time
-      setIsPaused(false);  // Ensure not paused
     }
   };
   
   // Handle ending the session
   const handleEndSession = () => {
-    if (isRecording) {
-      stopRecording();
-    }
-    
     endSession();
     navigate('/dashboard');
-  };
-  
-  // Handle pausing and resuming the session
-  const handlePauseResumeSession = () => {
-    setIsPaused(!isPaused);
-    
-    if (isPaused) {
-      // Resuming - recording will be handled by the effect above
-      toast("Session resumed");
-    } else {
-      // Pausing - recording will be handled by the effect above
-      toast("Session paused");
-    }
   };
 
   return {

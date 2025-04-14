@@ -3,14 +3,13 @@ import React from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { PlayCircle, PauseCircle, StopCircle } from 'lucide-react';
+import { useSession } from '@/context/SessionContext';
 
 interface SessionHeaderProps {
   title: string;
   description: string;
   totalTime: number;
-  isPaused: boolean;
   isRecording: boolean;
-  handlePauseResumeSession: () => void;
   handleEndSession: () => void;
 }
 
@@ -18,11 +17,11 @@ const SessionHeader: React.FC<SessionHeaderProps> = ({
   title,
   description,
   totalTime,
-  isPaused,
   isRecording,
-  handlePauseResumeSession,
   handleEndSession
 }) => {
+  const { isPaused, handlePauseResumeSession } = useSession();
+  
   // Format time as MM:SS
   const formatTime = (seconds: number): string => {
     const mins = Math.floor(seconds / 60);
@@ -41,9 +40,6 @@ const SessionHeader: React.FC<SessionHeaderProps> = ({
         : `${mins} min ${remainingSecs} sec`;
   };
   
-  // Timer is paused when session is paused (isPaused)
-  const timerPaused = isPaused;
-  
   return (
     <div className="flex flex-col md:flex-row justify-between gap-4 mb-6">
       <Card className="flex-grow">
@@ -57,7 +53,7 @@ const SessionHeader: React.FC<SessionHeaderProps> = ({
         <CardContent className="flex items-center justify-between gap-4 pt-6">
           <div>
             <div className="text-sm text-gray-500">Time Remaining</div>
-            <div className={`timer-text ${timerPaused ? 'text-amber-500' : 'text-blue-600 font-semibold'}`}>
+            <div className={`timer-text ${isPaused ? 'text-amber-500' : 'text-blue-600 font-semibold'}`}>
               {formatTotalTime(totalTime)}
             </div>
           </div>
@@ -69,7 +65,7 @@ const SessionHeader: React.FC<SessionHeaderProps> = ({
               size="sm"
               className="flex items-center gap-1"
             >
-              {timerPaused ? (
+              {isPaused ? (
                 <>
                   <PlayCircle className="h-4 w-4" />
                   Resume

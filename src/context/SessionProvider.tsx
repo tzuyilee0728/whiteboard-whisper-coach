@@ -21,6 +21,7 @@ export const SessionProvider: React.FC<SessionProviderProps> = ({ children }) =>
   const [recordingTime, setRecordingTime] = useState(0);
   const [audioRecordings, setAudioRecordings] = useState<AudioRecording[]>([]);
   const [customSessionTime, setCustomSessionTime] = useState(45); // Default to 45 minutes
+  const [isPaused, setIsPaused] = useState(false);
   const [sectionProgress, setSectionProgress] = useState<Record<WhiteboardSection, number>>({
     problem_discovery: 0,
     problem_definition: 0,
@@ -57,6 +58,7 @@ export const SessionProvider: React.FC<SessionProviderProps> = ({ children }) =>
     setCurrentSession(newSession);
     setCurrentSection('problem_discovery');
     setRecordingTime(0);
+    setIsPaused(false);
     toast.success("Session started!");
   };
 
@@ -75,6 +77,7 @@ export const SessionProvider: React.FC<SessionProviderProps> = ({ children }) =>
       // Update sessions with type-safe approach
       setSessions(sessions.map(s => s.id === currentSession.id ? updatedSession : s));
       setCurrentSession(null);
+      setIsPaused(false);
       
       toast.success("Session ended! View your feedback on the dashboard.");
     }
@@ -118,6 +121,25 @@ export const SessionProvider: React.FC<SessionProviderProps> = ({ children }) =>
     }
   };
 
+  // Handle pausing and resuming the session
+  const handlePauseResumeSession = () => {
+    setIsPaused(!isPaused);
+    
+    if (isPaused) {
+      // Resuming session
+      if (!isRecording) {
+        startRecording();
+      }
+      toast("Session resumed");
+    } else {
+      // Pausing session
+      if (isRecording) {
+        stopRecording();
+      }
+      toast("Session paused");
+    }
+  };
+
   // Create a stable context value object
   const contextValue = {
     challenges,
@@ -130,6 +152,7 @@ export const SessionProvider: React.FC<SessionProviderProps> = ({ children }) =>
     sectionProgress,
     audioRecordings,
     customSessionTime,
+    isPaused,
     selectChallenge,
     startSession,
     endSession,
@@ -139,7 +162,8 @@ export const SessionProvider: React.FC<SessionProviderProps> = ({ children }) =>
     updateSectionProgress,
     addRecording,
     updateRecordingTime,
-    setCustomSessionTime
+    setCustomSessionTime,
+    handlePauseResumeSession
   };
 
   // Return the provider with the context value
