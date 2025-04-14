@@ -23,6 +23,11 @@ const SessionControls: React.FC<SessionControlsProps> = ({
   totalTime,
   initialTime
 }) => {
+  // Calculate progress percentage
+  const progressPercentage = initialTime && totalTime 
+    ? Math.max(0, Math.min(100, 100 - ((totalTime / initialTime) * 100)))
+    : 0;
+
   return (
     <div className="lg:col-span-1 space-y-4">
       <div className="bg-white p-4 rounded-lg shadow">
@@ -30,11 +35,7 @@ const SessionControls: React.FC<SessionControlsProps> = ({
           Session Progress
         </h3>
         
-        <SessionProgressBar 
-          sections={sections} 
-          totalTime={totalTime} 
-          initialTime={initialTime}
-        />
+        <SessionProgressBar sections={sections} />
         
         <div className="space-y-2">
           <SectionGuidance section={currentSection} />
