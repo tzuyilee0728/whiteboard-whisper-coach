@@ -103,29 +103,17 @@ export function useSessionControls() {
     };
   }, [currentSession, isPaused, currentSection, sectionTime, handleNextSection, updateRecordingTime, remainingTime, customSessionTime]);
   
-  // Handle recording state based on session state
-  // This effect runs whenever isPaused or currentSession changes
+  // Handle recording separately from the timer effect to avoid render phase updates
   useEffect(() => {
-    const handleRecordingState = async () => {
-      // If session is active and not paused, recording should be on
-      if (currentSession && !isPaused) {
-        if (!isRecording) {
-          await startRecording();
-        }
-      } 
-      // If session is paused or ended, recording should be off
-      else if ((isPaused || !currentSession) && isRecording) {
-        await stopRecording();
-      }
-    };
-    
-    // Add a small delay to prevent rapid state changes
-    const timeoutId = setTimeout(() => {
-      handleRecordingState();
-    }, 100);
-    
-    return () => clearTimeout(timeoutId);
-  }, [isPaused, currentSession, isRecording, startRecording, stopRecording]);
+    // Only execute recording state changes in an effect, not during rendering
+    if (currentSession && !isPaused && !isRecording) {
+      // Start recording automatically when session starts or resumes
+      startRecording();
+    } else if ((isPaused || !currentSession) && isRecording) {
+      // Stop recording when session pauses or ends
+      stopRecording();
+    }
+  }, [currentSession, isPaused, isRecording, startRecording, stopRecording]);
   
   // Handle starting the session
   const handleStartSession = () => {
@@ -168,17 +156,25 @@ export function useSessionControls() {
   
   // Handle pausing and resuming the session
   const handlePauseResumeSession = useCallback(() => {
-    // Set the new paused state
-    setIsPaused(prevPaused => !prevPaused);
+    const newPausedState = !isPaused;
+    setIsPaused(newPausedState);
     
-    // Simply show the toast message here
-    // The recording state change will be handled by the effect
-    if (!isPaused) {
+    // Handle recording state change after paused state is updated
+    // to avoid race conditions
+    if (newPausedState) {
+      // Pausing - stop recording
+      if (isRecording) {
+        stopRecording();
+      }
       toast("Session paused");
     } else {
+      // Resuming - start recording
+      if (!isRecording) {
+        startRecording();
+      }
       toast("Session resumed");
     }
-  }, [isPaused]);
+  }, [isPaused, isRecording, startRecording, stopRecording]);
 
   return {
     currentChallenge,
