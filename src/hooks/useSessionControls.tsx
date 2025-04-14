@@ -103,8 +103,9 @@ export function useSessionControls() {
     };
   }, [currentSession, isPaused, currentSection, sectionTime, handleNextSection, updateRecordingTime, remainingTime, customSessionTime]);
   
-  // Handle recording synchronization with session timer
+  // Handle recording separately from the timer effect to avoid render phase updates
   useEffect(() => {
+    // Only execute recording state changes in an effect, not during rendering
     if (currentSession && !isPaused && !isRecording) {
       // Start recording automatically when session starts or resumes
       startRecording();
@@ -122,44 +123,58 @@ export function useSessionControls() {
       const randomChallenge = mockChallenges[randomIndex];
       selectChallenge(randomChallenge.id);
       
+      // Use setTimeout to ensure challenge is selected before starting session
       setTimeout(() => {
-        startSession();
+        // Initialize remaining time with current customSessionTime
+        setRemainingTime(customSessionTime * 60);
         setElapsedTime(0);  // Reset elapsed time
-        setRemainingTime(customSessionTime * 60);  // Set countdown timer from user selection
         setSectionTime(0);  // Reset section time
-        setIsPaused(false);  // Ensure not paused
+        setIsPaused(false); // Ensure not paused
+        startSession();
       }, 100);
     } else {
-      startSession();
+      // Initialize remaining time with current customSessionTime
+      setRemainingTime(customSessionTime * 60);
       setElapsedTime(0);  // Reset elapsed time
-      setRemainingTime(customSessionTime * 60);  // Set countdown timer from user selection
       setSectionTime(0);  // Reset section time
-      setIsPaused(false);  // Ensure not paused
+      setIsPaused(false); // Ensure not paused
+      startSession();
     }
   };
   
   // Handle ending the session
   const handleEndSession = () => {
+    // Stop recording first if needed
     if (isRecording) {
       stopRecording();
     }
     
+    // Then end session
     endSession();
     navigate('/dashboard');
   };
   
   // Handle pausing and resuming the session
-  const handlePauseResumeSession = () => {
-    setIsPaused(!isPaused);
+  const handlePauseResumeSession = useCallback(() => {
+    const newPausedState = !isPaused;
+    setIsPaused(newPausedState);
     
-    if (isPaused) {
-      // Resuming - recording will be handled by the effect above
-      toast("Session resumed");
-    } else {
-      // Pausing - recording will be handled by the effect above
+    // Handle recording state change after paused state is updated
+    // to avoid race conditions
+    if (newPausedState) {
+      // Pausing - stop recording
+      if (isRecording) {
+        stopRecording();
+      }
       toast("Session paused");
+    } else {
+      // Resuming - start recording
+      if (!isRecording) {
+        startRecording();
+      }
+      toast("Session resumed");
     }
-  };
+  }, [isPaused, isRecording, startRecording, stopRecording]);
 
   return {
     currentChallenge,
