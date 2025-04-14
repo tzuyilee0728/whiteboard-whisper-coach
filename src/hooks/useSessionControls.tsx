@@ -1,3 +1,4 @@
+
 import { useState, useEffect, useCallback } from 'react';
 import { useSession } from '@/context/SessionContext';
 import { useNavigate } from 'react-router-dom';
@@ -17,10 +18,14 @@ export function useSessionControls() {
     startRecording,
     stopRecording,
     selectChallenge,
-    updateRecordingTime
+    updateRecordingTime,
+    customSessionTime
   } = useSession();
   
-  const [totalTime, setTotalTime] = useState(0);
+  // Convert customSessionTime from minutes to seconds
+  const initialTotalTime = customSessionTime * 60;
+  
+  const [totalTime, setTotalTime] = useState(initialTotalTime);
   const [sectionTime, setSectionTime] = useState(0);
   const [isPaused, setIsPaused] = useState(false);
   const navigate = useNavigate();
@@ -69,11 +74,21 @@ export function useSessionControls() {
     if (currentSession && !isPaused) {
       interval = window.setInterval(() => {
         setTotalTime(prev => {
-          const newTotal = prev + 1;
-          // Update recording time to match total session time
-          updateRecordingTime(newTotal);
+          const newTotal = Math.max(0, prev - 1); // Count down instead of up, but never go below 0
+          
+          // Update recording time to match elapsed time
+          const elapsedTime = initialTotalTime - newTotal;
+          updateRecordingTime(elapsedTime);
+          
+          // End session when time reaches 0
+          if (newTotal === 0) {
+            toast.info("Time's up! Session ending.");
+            setTimeout(() => endSession(), 1000);
+          }
+          
           return newTotal;
         });
+        
         setSectionTime(prev => prev + 1);
         
         // Check if section time is up
@@ -87,7 +102,7 @@ export function useSessionControls() {
     return () => {
       if (interval) clearInterval(interval);
     };
-  }, [currentSession, isPaused, currentSection, sectionTime, handleNextSection, updateRecordingTime]);
+  }, [currentSession, isPaused, currentSection, sectionTime, handleNextSection, initialTotalTime, updateRecordingTime, endSession]);
   
   // Handle recording synchronization with session timer
   useEffect(() => {
@@ -100,6 +115,15 @@ export function useSessionControls() {
     }
   }, [currentSession, isPaused, isRecording, startRecording, stopRecording]);
   
+  // Reset timers when session starts
+  useEffect(() => {
+    if (currentSession) {
+      // Initialize with the custom session time in seconds
+      setTotalTime(customSessionTime * 60);
+      setSectionTime(0);
+    }
+  }, [currentSession, customSessionTime]);
+  
   // Handle starting the session
   const handleStartSession = () => {
     // Select random challenge if one isn't already selected
@@ -110,13 +134,13 @@ export function useSessionControls() {
       
       setTimeout(() => {
         startSession();
-        setTotalTime(0);  // Explicitly reset total time
+        setTotalTime(customSessionTime * 60);  // Initialize with custom time in seconds
         setSectionTime(0);  // Explicitly reset section time
         setIsPaused(false);  // Ensure not paused
       }, 100);
     } else {
       startSession();
-      setTotalTime(0);  // Explicitly reset total time
+      setTotalTime(customSessionTime * 60);  // Initialize with custom time in seconds
       setSectionTime(0);  // Explicitly reset section time
       setIsPaused(false);  // Ensure not paused
     }
