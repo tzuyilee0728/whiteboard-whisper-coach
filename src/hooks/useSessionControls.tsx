@@ -59,6 +59,14 @@ export function useSessionControls() {
     }
   }, [currentSection, sections, setCurrentSection]);
 
+  // Handle timer initialization when customSessionTime changes
+  useEffect(() => {
+    if (currentSession && !isPaused) {
+      // Update the remaining time when customSessionTime changes during an active session
+      setRemainingTime(customSessionTime * 60);
+    }
+  }, [customSessionTime]);
+
   // Handle timer logic - countdown from set time
   useEffect(() => {
     let interval: number | undefined;
@@ -111,23 +119,27 @@ export function useSessionControls() {
   
   // Handle starting the session
   const handleStartSession = () => {
-    // Always reset timer values at the start of a new session
-    // using the current customSessionTime from context
-    setRemainingTime(customSessionTime * 60);
-    setElapsedTime(0);
-    setSectionTime(0);
-    setIsPaused(false);
-    
     // Select random challenge if one isn't already selected
     if (!currentChallenge) {
       const randomIndex = Math.floor(Math.random() * mockChallenges.length);
       const randomChallenge = mockChallenges[randomIndex];
       selectChallenge(randomChallenge.id);
       
+      // First set the timer values, then start the session
+      setRemainingTime(customSessionTime * 60);
+      setElapsedTime(0);
+      setSectionTime(0);
+      setIsPaused(false);
+      
       setTimeout(() => {
         startSession();
       }, 100);
     } else {
+      // First set the timer values, then start the session
+      setRemainingTime(customSessionTime * 60);
+      setElapsedTime(0);
+      setSectionTime(0);
+      setIsPaused(false);
       startSession();
     }
   };
