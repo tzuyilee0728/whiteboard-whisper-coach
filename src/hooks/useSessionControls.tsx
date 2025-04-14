@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useCallback } from 'react';
 import { useSession } from '@/context/SessionContext';
 import { useNavigate } from 'react-router-dom';
@@ -23,7 +22,7 @@ export function useSessionControls() {
   } = useSession();
   
   const [elapsedTime, setElapsedTime] = useState(0);
-  const [remainingTime, setRemainingTime] = useState(0);
+  const [remainingTime, setRemainingTime] = useState(0); // Initialize to 0, will set properly on session start
   const [sectionTime, setSectionTime] = useState(0);
   const [isPaused, setIsPaused] = useState(false);
   const navigate = useNavigate();
@@ -58,14 +57,6 @@ export function useSessionControls() {
       toast.info("You're at the first section!");
     }
   }, [currentSection, sections, setCurrentSection]);
-
-  // Handle timer initialization when customSessionTime changes
-  useEffect(() => {
-    if (currentSession && !isPaused) {
-      // Update the remaining time when customSessionTime changes during an active session
-      setRemainingTime(customSessionTime * 60);
-    }
-  }, [customSessionTime]);
 
   // Handle timer logic - countdown from set time
   useEffect(() => {
@@ -125,22 +116,21 @@ export function useSessionControls() {
       const randomChallenge = mockChallenges[randomIndex];
       selectChallenge(randomChallenge.id);
       
-      // First set the timer values, then start the session
-      setRemainingTime(customSessionTime * 60);
-      setElapsedTime(0);
-      setSectionTime(0);
-      setIsPaused(false);
-      
       setTimeout(() => {
+        // Set remaining time immediately before starting the session
+        setRemainingTime(customSessionTime * 60);
         startSession();
+        setElapsedTime(0);  // Reset elapsed time
+        setSectionTime(0);  // Reset section time
+        setIsPaused(false);  // Ensure not paused
       }, 100);
     } else {
-      // First set the timer values, then start the session
+      // Set remaining time immediately before starting the session
       setRemainingTime(customSessionTime * 60);
-      setElapsedTime(0);
-      setSectionTime(0);
-      setIsPaused(false);
       startSession();
+      setElapsedTime(0);  // Reset elapsed time
+      setSectionTime(0);  // Reset section time
+      setIsPaused(false);  // Ensure not paused
     }
   };
   
