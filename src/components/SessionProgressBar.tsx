@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { WhiteboardSection } from '@/types';
 import { sectionTimings } from '@/services/mockData';
@@ -6,23 +7,24 @@ import { Progress } from '@/components/ui/progress';
 
 interface SessionProgressBarProps {
   sections: WhiteboardSection[];
+  totalTime?: number;
+  initialTime?: number;
 }
 
-const SessionProgressBar: React.FC<SessionProgressBarProps> = ({ sections }) => {
-  const { currentSection, customSessionTime } = useSession();
+const SessionProgressBar: React.FC<SessionProgressBarProps> = ({ 
+  sections, 
+  totalTime = 0,
+  initialTime = 0 
+}) => {
+  const { currentSection } = useSession();
   
-  // Get progress percentage based on remaining time from SessionControls
+  // Calculate progress percentage based on elapsed time
   const getProgressPercentage = () => {
-    // This will be calculated from the totalTime in useSessionControls
-    const elapsedPercentage = sessionProgressValue();
+    if (!initialTime) return 0;
+    
+    // Calculate how much time has elapsed as a percentage
+    const elapsedPercentage = Math.max(0, Math.min(100, 100 - ((totalTime / initialTime) * 100)));
     return elapsedPercentage;
-  };
-  
-  // We'll use this to get the progress value from the custom hooks or context
-  const sessionProgressValue = () => {
-    // Access progress from the hook through a prop or context
-    // For now, return a placeholder value that will be updated
-    return 30; // This will be replaced with actual progress calculation
   };
 
   return (
@@ -32,7 +34,7 @@ const SessionProgressBar: React.FC<SessionProgressBarProps> = ({ sections }) => 
       
       {/* Section labels underneath */}
       <div className="flex justify-between">
-        {sections.map((section, index) => {
+        {sections.map((section) => {
           return (
             <div key={section} className="flex flex-col items-center">
               <span className="text-xs font-medium text-gray-600">
