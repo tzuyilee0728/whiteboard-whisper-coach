@@ -59,6 +59,10 @@ export const SessionProvider: React.FC<SessionProviderProps> = ({ children }) =>
     setCurrentSection('problem_discovery');
     setRecordingTime(0);
     setIsPaused(false);
+    
+    // Automatically start recording when session starts
+    setIsRecording(true);
+    
     toast.success("Session started!");
   };
 
@@ -78,6 +82,11 @@ export const SessionProvider: React.FC<SessionProviderProps> = ({ children }) =>
       setSessions(sessions.map(s => s.id === currentSession.id ? updatedSession : s));
       setCurrentSession(null);
       setIsPaused(false);
+      
+      // Stop recording if it's still active
+      if (isRecording) {
+        stopRecording();
+      }
       
       toast.success("Session ended! View your feedback on the dashboard.");
     }
