@@ -1,5 +1,6 @@
+
 import React, { createContext, useContext } from 'react';
-import { Challenge, Session, WhiteboardSection, AudioRecording } from '@/types';
+import { Challenge, Session, WhiteboardSection, AudioRecording, Category } from '@/types';
 import { SessionProvider } from './SessionProvider';
 
 interface SessionContextType {
