@@ -1,13 +1,9 @@
-
-export type DifficultyLevel = 'junior' | 'mid-level' | 'senior';
-
 export type Category = 'e-commerce' | 'healthcare' | 'finance' | 'social' | 'productivity';
 
 export interface Challenge {
   id: string;
   title: string;
   description: string;
-  difficulty: DifficultyLevel;
   category: Category;
 }
 
@@ -26,7 +22,6 @@ export interface Feedback {
   strengths: string[];
   improvements: string[];
   sectionFeedback: Record<WhiteboardSection, string>;
-  overallRating: number;
 }
 
 export type WhiteboardSection = 
