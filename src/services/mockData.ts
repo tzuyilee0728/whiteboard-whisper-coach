@@ -52,8 +52,7 @@ export const mockSessions: Session[] = [
         prioritization: "Well-structured prioritization framework based on impact and feasibility.",
         user_flow_wireframe: "Clear wireframes that addressed the main pain points.",
         final_wrap_up: "Well summarized solution and approach."
-      },
-      overallRating: 4
+      }
     }
   },
   {
@@ -80,8 +79,7 @@ export const mockSessions: Session[] = [
         prioritization: "Could have been more structured in prioritization approach.",
         user_flow_wireframe: "Wireframes were clear but could use more detail in key interactions.",
         final_wrap_up: "Good wrap up of the session with key points."
-      },
-      overallRating: 3.5
+      }
     }
   }
 ];
