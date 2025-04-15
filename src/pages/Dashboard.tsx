@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Link } from 'react-router-dom';
-import { Clock, Calendar, BarChart } from 'lucide-react';
+import { Clock, Calendar, Star, BarChart } from 'lucide-react';
 
 const Dashboard = () => {
   const { sessions } = useSession();
@@ -17,6 +17,15 @@ const Dashboard = () => {
       day: 'numeric',
       year: 'numeric'
     });
+  };
+  
+  const getDifficultyColor = (difficulty: string) => {
+    switch(difficulty) {
+      case 'junior': return 'bg-green-100 text-green-800';
+      case 'mid-level': return 'bg-yellow-100 text-yellow-800';
+      case 'senior': return 'bg-red-100 text-red-800';
+      default: return 'bg-blue-100 text-blue-800';
+    }
   };
   
   const getCategoryColor = (category: string) => {
@@ -48,7 +57,7 @@ const Dashboard = () => {
           </Link>
         </div>
         
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-10">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-10">
           <Card>
             <CardHeader className="pb-2">
               <CardTitle>Total Sessions</CardTitle>
@@ -70,6 +79,25 @@ const Dashboard = () => {
               </p>
             </CardContent>
           </Card>
+          
+          <Card>
+            <CardHeader className="pb-2">
+              <CardTitle>Average Rating</CardTitle>
+              <CardDescription>Based on your session performance</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="flex items-center">
+                <p className="text-4xl font-bold">
+                  {(sessions
+                    .filter(s => s.feedback)
+                    .reduce((total, s) => total + (s.feedback?.overallRating || 0), 0) / 
+                    sessions.filter(s => s.feedback).length
+                  ).toFixed(1)}
+                </p>
+                <Star className="h-5 w-5 text-yellow-500 ml-2" fill="currentColor" />
+              </div>
+            </CardContent>
+          </Card>
         </div>
         
         <h2 className="text-2xl font-bold text-gray-900 mb-6">Recent Sessions</h2>
@@ -88,6 +116,9 @@ const Dashboard = () => {
                 <div className="flex flex-col md:flex-row">
                   <div className="flex-grow p-6">
                     <div className="flex flex-wrap gap-2 mb-3">
+                      <Badge variant="outline" className={getDifficultyColor(session.challenge.difficulty)}>
+                        {session.challenge.difficulty}
+                      </Badge>
                       <Badge variant="outline" className={getCategoryColor(session.challenge.category)}>
                         {session.challenge.category}
                       </Badge>
@@ -104,6 +135,12 @@ const Dashboard = () => {
                         <Clock className="h-4 w-4 mr-1" />
                         {session.duration} minutes
                       </div>
+                      {session.feedback && (
+                        <div className="flex items-center">
+                          <Star className="h-4 w-4 mr-1 text-yellow-500" fill="currentColor" />
+                          {session.feedback.overallRating.toFixed(1)}
+                        </div>
+                      )}
                     </div>
                     
                     {session.feedback && (
@@ -158,3 +195,4 @@ const Dashboard = () => {
 };
 
 export default Dashboard;
+
