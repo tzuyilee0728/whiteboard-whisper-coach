@@ -1,4 +1,3 @@
-
 import React, { createContext, useContext } from 'react';
 import { Challenge, Session, WhiteboardSection, AudioRecording } from '@/types';
 import { SessionProvider } from './SessionProvider';
@@ -15,6 +14,8 @@ interface SessionContextType {
   audioRecordings: AudioRecording[];
   customSessionTime: number;
   isPaused: boolean;
+  selectedIndustry: Category | null;
+  selectIndustry: (industry: Category) => void;
   selectChallenge: (challengeId: string) => void;
   startSession: () => void;
   endSession: () => void;

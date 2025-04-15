@@ -8,18 +8,25 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { Challenge } from '@/types';
-import { Badge } from '@/components/ui/badge';
+import { Category } from '@/types';
 
-const ChallengeSelector = () => {
-  const { challenges, selectChallenge, currentChallenge } = useSession();
+const IndustrySelector = () => {
+  const { selectIndustry, selectedIndustry } = useSession();
   
-  const handleSelectChallenge = (challengeId: string) => {
-    selectChallenge(challengeId);
+  const industries: Category[] = [
+    'e-commerce',
+    'healthcare',
+    'finance',
+    'social',
+    'productivity'
+  ];
+  
+  const handleSelectIndustry = (industry: Category) => {
+    selectIndustry(industry);
   };
   
-  const getCategoryColor = (category: string) => {
-    switch(category) {
+  const getIndustryColor = (industry: Category) => {
+    switch(industry) {
       case 'e-commerce': return 'bg-purple-100 text-purple-800';
       case 'healthcare': return 'bg-blue-100 text-blue-800';
       case 'finance': return 'bg-emerald-100 text-emerald-800';
@@ -32,27 +39,20 @@ const ChallengeSelector = () => {
   return (
     <div>
       <label className="block text-sm font-medium text-gray-700 mb-1">
-        Select a Challenge
+        Select an Industry
       </label>
-      <Select onValueChange={handleSelectChallenge} value={currentChallenge?.id || ''}>
+      <Select onValueChange={handleSelectIndustry} value={selectedIndustry || ''}>
         <SelectTrigger className="w-full">
-          <SelectValue placeholder="Choose a design challenge" />
+          <SelectValue placeholder="Choose an industry" />
         </SelectTrigger>
         <SelectContent>
-          {challenges.map((challenge: Challenge) => (
+          {industries.map((industry) => (
             <SelectItem 
-              key={challenge.id} 
-              value={challenge.id}
-              className="py-3"
+              key={industry} 
+              value={industry}
+              className={`py-3 ${getIndustryColor(industry)}`}
             >
-              <div>
-                <div className="mb-1 font-medium">{challenge.title}</div>
-                <div className="flex gap-2 mb-1">
-                  <Badge variant="outline" className={getCategoryColor(challenge.category)}>
-                    {challenge.category}
-                  </Badge>
-                </div>
-              </div>
+              <div className="capitalize">{industry.replace('-', ' ')}</div>
             </SelectItem>
           ))}
         </SelectContent>
@@ -61,4 +61,5 @@ const ChallengeSelector = () => {
   );
 };
 
-export default ChallengeSelector;
+export default IndustrySelector;
+

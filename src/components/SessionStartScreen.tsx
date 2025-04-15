@@ -1,8 +1,7 @@
-
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import ChallengeSelector from '@/components/ChallengeSelector';
+import IndustrySelector from '@/components/ChallengeSelector';
 import { Button } from '@/components/ui/button';
 import { Clock, Timer, Plus, Minus } from 'lucide-react';
 import { useSession } from '@/context/SessionContext';
@@ -16,7 +15,7 @@ interface SessionStartScreenProps {
 }
 
 const SessionStartScreen: React.FC<SessionStartScreenProps> = ({ handleStartSession }) => {
-  const { currentChallenge, setCustomSessionTime } = useSession();
+  const { currentChallenge, setCustomSessionTime, selectedIndustry } = useSession();
   const [isCountingDown, setIsCountingDown] = useState(false);
   const [countdown, setCountdown] = useState(5);
   const [customTime, setCustomTime] = useState(45);
@@ -34,8 +33,8 @@ const SessionStartScreen: React.FC<SessionStartScreenProps> = ({ handleStartSess
   const totalSessionMinutes = customTime;
   
   const startCountdown = () => {
-    if (!currentChallenge) {
-      toast.error("Please select a challenge first");
+    if (!selectedIndustry) {
+      toast.error("Please select an industry first");
       return;
     }
 
@@ -87,12 +86,10 @@ const SessionStartScreen: React.FC<SessionStartScreenProps> = ({ handleStartSess
             </div>
           ) : (
             <div className="space-y-4">
-              <ChallengeSelector />
+              <IndustrySelector />
               
-              {currentChallenge && (
+              {selectedIndustry && (
                 <div className="mt-6 border-t pt-4">
-                  <h3 className="font-semibold text-lg mb-2">{currentChallenge.title}</h3>
-                  
                   <div className="bg-blue-50 rounded-md p-4 mb-6">
                     <AlertTitle className="flex items-center text-blue-800 mb-2">
                       <Clock className="mr-2 h-5 w-5" />

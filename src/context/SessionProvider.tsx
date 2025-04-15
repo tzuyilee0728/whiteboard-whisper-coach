@@ -1,6 +1,5 @@
-
 import React, { useState, ReactNode, useEffect } from 'react';
-import { Challenge, Session, WhiteboardSection, AudioRecording, Feedback } from '@/types';
+import { Challenge, Session, WhiteboardSection, AudioRecording, Feedback, Category } from '@/types';
 import { mockChallenges, mockSessions } from '@/services/mockData';
 import { generateSessionFeedback } from './sessionUtils';
 import { toast } from 'sonner';
@@ -30,6 +29,23 @@ export const SessionProvider: React.FC<SessionProviderProps> = ({ children }) =>
     user_flow_wireframe: 0,
     final_wrap_up: 0
   });
+  
+  const [selectedIndustry, setSelectedIndustry] = useState<Category | null>(null);
+
+  const selectIndustry = (industry: Category) => {
+    setSelectedIndustry(industry);
+    setCurrentChallenge(null); // Reset current challenge when industry changes
+  };
+
+  const generateRandomChallenge = (industry: Category) => {
+    const industrySpecificChallenges = challenges.filter(c => c.category === industry);
+    if (industrySpecificChallenges.length === 0) {
+      toast.error("No challenges found for this industry");
+      return null;
+    }
+    const randomIndex = Math.floor(Math.random() * industrySpecificChallenges.length);
+    return industrySpecificChallenges[randomIndex];
+  };
 
   // Handler functions
   const selectChallenge = (challengeId: string) => {
@@ -41,15 +57,21 @@ export const SessionProvider: React.FC<SessionProviderProps> = ({ children }) =>
   };
 
   const startSession = () => {
-    if (!currentChallenge) {
-      toast.error("Please select a challenge first");
+    if (!selectedIndustry) {
+      toast.error("Please select an industry first");
       return;
     }
+    
+    // Generate a random challenge for the selected industry
+    const randomChallenge = generateRandomChallenge(selectedIndustry);
+    if (!randomChallenge) return;
+    
+    setCurrentChallenge(randomChallenge);
     
     const newSession: Session = {
       id: `s${sessions.length + 1}`,
       date: new Date().toISOString(),
-      challenge: currentChallenge,
+      challenge: randomChallenge,
       duration: 0,
       status: 'in-progress'
     };
@@ -151,6 +173,8 @@ export const SessionProvider: React.FC<SessionProviderProps> = ({ children }) =>
 
   // Create a stable context value object
   const contextValue = {
+    selectedIndustry,
+    selectIndustry,
     challenges,
     sessions,
     currentChallenge,
