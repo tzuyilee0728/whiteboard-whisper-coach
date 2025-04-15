@@ -35,7 +35,7 @@ export const mockAIQuestions: Record<string, string[]> = {
     "Is team collaboration a key feature?",
     "What metrics would define success for this productivity tool?"
   ]
-];
+};
 
 export const getRandomAIQuestion = (category: string): string => {
   const questions = mockAIQuestions[category] || mockAIQuestions["e-commerce"];
