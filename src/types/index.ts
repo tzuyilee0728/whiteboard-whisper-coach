@@ -1,3 +1,4 @@
+
 export type DifficultyLevel = 'junior' | 'mid-level' | 'senior';
 
 export type Category = 'e-commerce' | 'healthcare' | 'finance' | 'social' | 'productivity';
@@ -6,6 +7,7 @@ export interface Challenge {
   id: string;
   title: string;
   description: string;
+  difficulty: DifficultyLevel;
   category: Category;
 }
 
