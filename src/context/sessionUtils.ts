@@ -17,8 +17,7 @@ export const generateSessionFeedback = (session: Session): Feedback => {
         prioritization: "No data",
         user_flow_wireframe: "No data",
         final_wrap_up: "No data"
-      },
-      overallRating: 0
+      }
     };
   }
   
@@ -50,16 +49,12 @@ export const generateSessionFeedback = (session: Session): Feedback => {
     improvements.push("Consider practicing more regularly");
   }
   
-  // Random rating between 3 and 5
-  const overallRating = Number((3 + Math.random() * 2).toFixed(1));
-  
   // Return a properly typed Feedback object
   return {
     id: `f${session.id.substring(1)}`,
     sessionId: session.id,
     strengths,
     improvements,
-    sectionFeedback,
-    overallRating
+    sectionFeedback
   };
 };
