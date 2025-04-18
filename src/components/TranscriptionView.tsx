@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useRef } from 'react';
 import { Mic, AlertTriangle, PauseCircle } from 'lucide-react';
 import { useSession } from '@/context/SessionContext';
@@ -77,7 +76,7 @@ const TranscriptionView = () => {
       </div>
       
       <div className="flex-grow overflow-auto" ref={transcriptionRef}>
-        {(isRecording || transcription) && (
+        {(transcription || feedback.length > 0) ? (
           <div className="space-y-4">
             <div className="border-b pb-2 mb-2">
               <p className="text-sm font-medium">Transcription:</p>
@@ -97,9 +96,7 @@ const TranscriptionView = () => {
               </div>
             )}
           </div>
-        )}
-        
-        {!isRecording && !transcription && (
+        ) : (
           <div className="h-full flex flex-col items-center justify-center text-center text-gray-500">
             <AlertTriangle className="h-10 w-10 mb-2 text-amber-500" />
             <p>Start recording to see live transcription</p>
