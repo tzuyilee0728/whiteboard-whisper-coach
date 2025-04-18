@@ -10,6 +10,7 @@ interface SessionContextType {
   currentSession: Session | null;
   currentSection: WhiteboardSection;
   isRecording: boolean;
+  setIsRecording: (isRecording: boolean) => void; // Added this line to fix the error
   recordingTime: number;
   sectionProgress: Record<WhiteboardSection, number>;
   audioRecordings: AudioRecording[];
