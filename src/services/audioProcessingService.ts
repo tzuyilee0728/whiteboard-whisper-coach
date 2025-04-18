@@ -5,6 +5,8 @@ import { toast } from 'sonner';
 export class AudioProcessingService {
   private audioQueue: Blob[] = [];
   private isProcessingAudio: boolean = false;
+  private currentTranscript: string = '';
+  private transcriptCallback: ((transcript: string) => void) | null = null;
 
   public async processAudioChunk(audioChunk: Blob) {
     try {
@@ -17,12 +19,30 @@ export class AudioProcessingService {
 
       if (error) throw error;
 
-      return data?.transcription || '';
+      const transcription = data?.transcription || '';
+      if (transcription && transcription.trim() !== '') {
+        this.currentTranscript += ' ' + transcription;
+        
+        // Call the callback if it exists
+        if (this.transcriptCallback) {
+          this.transcriptCallback(this.currentTranscript);
+        }
+      }
+      
+      return transcription;
     } catch (error) {
       console.error('Error processing audio for transcription:', error);
       toast.error('Error processing audio');
       return '';
     }
+  }
+
+  public setTranscriptCallback(callback: (transcript: string) => void) {
+    this.transcriptCallback = callback;
+  }
+
+  public getCurrentTranscript(): string {
+    return this.currentTranscript;
   }
 
   private arrayBufferToBase64(buffer: ArrayBuffer): string {

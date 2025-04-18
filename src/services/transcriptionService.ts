@@ -21,22 +21,40 @@ export class TranscriptionService {
   }
 
   public start() {
+    if (this.isUsingAPI) {
+      console.log('Using API transcription service');
+      return true; // We're ready to process audio chunks
+    }
     return browserSpeechService.start();
   }
 
   public stop() {
+    if (this.isUsingAPI) {
+      return true;
+    }
     return browserSpeechService.stop();
   }
 
   public reset() {
+    if (this.isUsingAPI) {
+      return;
+    }
     browserSpeechService.reset();
   }
 
   public onTranscriptUpdate(callback: (transcript: string) => void) {
+    if (this.isUsingAPI) {
+      // For API mode, the callback will be called when we process chunks
+      audioProcessingService.setTranscriptCallback(callback);
+      return;
+    }
     browserSpeechService.onTranscriptUpdate(callback);
   }
 
   public getCurrentTranscript(): string {
+    if (this.isUsingAPI) {
+      return audioProcessingService.getCurrentTranscript();
+    }
     return browserSpeechService.getCurrentTranscript();
   }
 }

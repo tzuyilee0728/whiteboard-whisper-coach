@@ -13,13 +13,21 @@ const TranscriptionView = () => {
   const transcriptionRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
+    // Reset transcription when session starts
+    if (currentSession) {
+      setTranscription('');
+      setFeedback([]);
+    }
+  }, [currentSession]);
+
+  useEffect(() => {
     if (currentSession && isRecording && !isPaused) {
       // Subscribe to transcription updates
       transcriptionService.onTranscriptUpdate((newTranscript) => {
-        setTranscription(prev => prev + ' ' + newTranscript);
+        setTranscription(newTranscript);
       });
 
-      // Subscribe to AI feedback updates
+      // Subscribe to AI feedback updates if needed
       aiAnalysisService.onFeedback((newFeedback) => {
         setFeedback(prev => [...prev, newFeedback]);
       });

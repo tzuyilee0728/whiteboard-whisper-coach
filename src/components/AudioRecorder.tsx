@@ -46,6 +46,13 @@ const AudioRecorder = () => {
     }
   };
   
+  // Auto-start recording when session starts
+  useEffect(() => {
+    if (currentSession && !isRecording && !isPaused) {
+      startRecording();
+    }
+  }, [currentSession, isRecording, isPaused]);
+  
   // Show error if microphone access is denied
   useEffect(() => {
     if (error) {

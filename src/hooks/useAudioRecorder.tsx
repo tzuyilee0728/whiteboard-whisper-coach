@@ -30,13 +30,13 @@ export const useAudioRecorder = () => {
     if (audioStream) {
       const recorder = new MediaRecorder(audioStream);
       
-      recorder.ondataavailable = (e) => {
+      recorder.ondataavailable = async (e) => {
         if (e.data.size > 0) {
           audioChunksRef.current.push(e.data);
           
           // Send the latest audio chunk to the transcription service
           if (isRecording) {
-            transcriptionService.processAudioChunk(e.data);
+            await transcriptionService.processAudioChunk(e.data);
           }
         }
       };
@@ -58,7 +58,10 @@ export const useAudioRecorder = () => {
     
     if (mediaRecorder && mediaRecorder.state !== 'recording') {
       audioChunksRef.current = [];
-      mediaRecorder.start(1000); // Capture in 1-second chunks for real-time processing
+      // Initialize the transcription service
+      transcriptionService.start();
+      // Start recording in smaller chunks for real-time processing
+      mediaRecorder.start(1000);
       setIsRecording(true);
     }
   };
@@ -67,6 +70,7 @@ export const useAudioRecorder = () => {
   const stopRecording = () => {
     if (mediaRecorder && mediaRecorder.state === 'recording') {
       mediaRecorder.stop();
+      transcriptionService.stop();
       setIsRecording(false);
       return new Blob(audioChunksRef.current, { type: 'audio/webm' });
     }
