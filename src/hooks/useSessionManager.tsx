@@ -1,5 +1,4 @@
-
-import { useCallback, useRef } from 'react';
+import { useCallback, useRef, useEffect } from 'react';
 import { Category, Challenge, AudioRecording, WhiteboardSection } from '@/types';
 import { generateSessionFeedback } from '@/context/sessionUtils';
 import { toast } from 'sonner';
@@ -104,11 +103,10 @@ export const useSessionManager = (state: ReturnType<typeof import('./useSessionS
       const arrayBuffer = await audioBlob.arrayBuffer();
       const base64Audio = arrayBufferToBase64(arrayBuffer);
       
-      // Save to Supabase
-      const { data, error } = await supabase.from('session_recordings').insert({
-        session_id: sessionId,
-        audio_data: base64Audio,
-        created_at: new Date().toISOString()
+      // Save to Supabase - using a custom RPC function instead of directly inserting
+      const { data, error } = await supabase.rpc('save_session_recording', {
+        p_session_id: sessionId,
+        p_audio_data: base64Audio
       });
       
       if (error) {

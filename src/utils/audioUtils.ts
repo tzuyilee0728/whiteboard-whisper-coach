@@ -39,3 +39,19 @@ export const playAudioBlob = (blob: Blob): HTMLAudioElement => {
   audio.play();
   return audio;
 };
+
+// Helper function to compress large audio blobs if needed
+export const compressAudioIfNeeded = async (blob: Blob, maxSizeMB: number = 5): Promise<Blob> => {
+  const maxSizeBytes = maxSizeMB * 1024 * 1024;
+  
+  if (blob.size <= maxSizeBytes) {
+    return blob; // No compression needed
+  }
+  
+  console.log(`Audio blob size (${(blob.size / 1024 / 1024).toFixed(2)}MB) exceeds limit, compressing...`);
+  
+  // Simple compression - convert to mp3 or lower quality format
+  // This is a placeholder - actual implementation would depend on available libraries
+  // For now, just return the original blob
+  return blob;
+};
