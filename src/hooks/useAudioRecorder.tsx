@@ -2,6 +2,7 @@
 import { useState, useRef, useEffect } from 'react';
 import { useSession } from '@/context/SessionContext';
 import { toast } from 'sonner';
+import { transcriptionService } from '@/services/transcriptionService';
 
 export const useAudioRecorder = () => {
   const [audioStream, setAudioStream] = useState<MediaStream | null>(null);
@@ -32,6 +33,11 @@ export const useAudioRecorder = () => {
       recorder.ondataavailable = (e) => {
         if (e.data.size > 0) {
           audioChunksRef.current.push(e.data);
+          
+          // Send the latest audio chunk to the transcription service
+          if (isRecording) {
+            transcriptionService.processAudioChunk(e.data);
+          }
         }
       };
       
@@ -41,7 +47,7 @@ export const useAudioRecorder = () => {
         recorder.ondataavailable = null;
       };
     }
-  }, [audioStream]);
+  }, [audioStream, isRecording]);
 
   // Start recording function
   const startRecording = async () => {
@@ -84,12 +90,18 @@ export const useAudioRecorder = () => {
     return null;
   };
 
+  // Get all audio chunks
+  const getAllAudioChunks = () => {
+    return audioChunksRef.current;
+  };
+
   return {
     startRecording,
     stopRecording,
     isRecording,
     error,
     getLatestAudioChunk,
+    getAllAudioChunks,
     audioChunksRef
   };
 };
