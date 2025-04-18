@@ -4,8 +4,10 @@ import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
+import { Card, CardHeader, CardTitle, CardContent, CardFooter } from '@/components/ui/card';
 import { toast } from 'sonner';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import { Info } from 'lucide-react';
 
 const AuthPage = () => {
   const [isLogin, setIsLogin] = React.useState(true);
@@ -13,11 +15,13 @@ const AuthPage = () => {
   const [password, setPassword] = React.useState('');
   const [fullName, setFullName] = React.useState('');
   const [loading, setLoading] = React.useState(false);
+  const [authError, setAuthError] = React.useState<string | null>(null);
   const navigate = useNavigate();
 
   const handleAuth = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
+    setAuthError(null);
 
     try {
       if (isLogin) {
@@ -25,8 +29,15 @@ const AuthPage = () => {
           email,
           password,
         });
-        if (error) throw error;
-        navigate('/dashboard');
+        if (error) {
+          if (error.message.includes('disabled')) {
+            setAuthError('Email login is currently disabled. Please enable it in your Supabase dashboard under Authentication > Providers.');
+          } else {
+            throw error;
+          }
+        } else {
+          navigate('/dashboard');
+        }
       } else {
         const { error } = await supabase.auth.signUp({
           email,
@@ -37,8 +48,15 @@ const AuthPage = () => {
             },
           },
         });
-        if (error) throw error;
-        toast.success('Sign up successful! Please check your email for verification.');
+        if (error) {
+          if (error.message.includes('disabled')) {
+            setAuthError('Email signup is currently disabled. Please enable it in your Supabase dashboard under Authentication > Providers.');
+          } else {
+            throw error;
+          }
+        } else {
+          toast.success('Sign up successful! Please check your email for verification.');
+        }
       }
     } catch (error: any) {
       toast.error(error.message);
@@ -56,6 +74,15 @@ const AuthPage = () => {
           </CardTitle>
         </CardHeader>
         <CardContent>
+          {authError && (
+            <Alert variant="destructive" className="mb-4">
+              <div className="flex gap-2 items-center">
+                <Info size={16} />
+                <AlertDescription>{authError}</AlertDescription>
+              </div>
+            </Alert>
+          )}
+          
           <form onSubmit={handleAuth} className="space-y-4">
             {!isLogin && (
               <div>
@@ -113,6 +140,11 @@ const AuthPage = () => {
             </button>
           </div>
         </CardContent>
+        <CardFooter className="flex flex-col gap-4">
+          <div className="text-sm text-center text-gray-600">
+            To enable email login, please go to your Supabase dashboard, navigate to Authentication {">"} Providers, and enable Email provider.
+          </div>
+        </CardFooter>
       </Card>
     </div>
   );
