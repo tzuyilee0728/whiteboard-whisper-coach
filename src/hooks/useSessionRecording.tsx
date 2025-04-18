@@ -21,7 +21,7 @@ export const useSessionRecording = (state: ReturnType<typeof import('./useSessio
       const { data, error } = await supabase.rpc('save_session_recording', {
         p_session_id: sessionId,
         p_audio_data: base64Audio
-      } as any);
+      });
       
       if (error) {
         throw error;

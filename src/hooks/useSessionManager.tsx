@@ -4,6 +4,7 @@ import { Category, WhiteboardSection } from '@/types';
 import { toast } from 'sonner';
 import { transcriptionService } from '@/services/transcriptionService';
 import { aiAnalysisService } from '@/services/aiAnalysisService';
+import { generateSessionFeedback } from '@/context/sessionUtils';
 import { useSessionRecording } from './useSessionRecording';
 import { useSessionControl } from './useSessionControl';
 

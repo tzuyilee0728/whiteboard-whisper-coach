@@ -1,10 +1,8 @@
 
 import { useCallback } from 'react';
-import { Category, Challenge } from '@/types';
+import { Category, Challenge, WhiteboardSection } from '@/types';
 import { generateSessionFeedback } from '@/context/sessionUtils';
 import { toast } from 'sonner';
-import { transcriptionService } from '@/services/transcriptionService';
-import { aiAnalysisService } from '@/services/aiAnalysisService';
 
 export const useSessionControl = (state: ReturnType<typeof import('./useSessionState').useSessionState>) => {
   const generateRandomChallenge = useCallback((industry: Category) => {

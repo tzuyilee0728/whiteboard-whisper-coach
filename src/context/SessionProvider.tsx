@@ -15,6 +15,9 @@ export const SessionProvider: React.FC<SessionProviderProps> = ({ children }) =>
   const contextValue = {
     ...state,
     ...managers,
+    startRecording: () => {}, // Add placeholder functions to satisfy TypeScript
+    stopRecording: () => {},
+    updateRecordingTime: (time: number) => {},
   };
 
   return (
