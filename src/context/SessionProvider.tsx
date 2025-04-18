@@ -1,214 +1,22 @@
-import React, { useState, ReactNode, useEffect } from 'react';
-import { Challenge, Session, WhiteboardSection, AudioRecording, Feedback, Category } from '@/types';
-import { mockChallenges, mockSessions } from '@/services/mockData';
-import { generateSessionFeedback } from './sessionUtils';
-import { toast } from 'sonner';
+
+import React, { ReactNode } from 'react';
 import { SessionContext } from './SessionContext';
+import { useSessionState } from '@/hooks/useSessionState';
+import { useSessionManager } from '@/hooks/useSessionManager';
 
 interface SessionProviderProps {
   children: ReactNode;
 }
 
 export const SessionProvider: React.FC<SessionProviderProps> = ({ children }) => {
-  // All useState hooks at the component level
-  const [challenges] = useState<Challenge[]>(mockChallenges);
-  const [sessions, setSessions] = useState<Session[]>(mockSessions);
-  const [currentChallenge, setCurrentChallenge] = useState<Challenge | null>(null);
-  const [currentSession, setCurrentSession] = useState<Session | null>(null);
-  const [currentSection, setCurrentSection] = useState<WhiteboardSection>('problem_discovery');
-  const [isRecording, setIsRecording] = useState(false);
-  const [recordingTime, setRecordingTime] = useState(0);
-  const [audioRecordings, setAudioRecordings] = useState<AudioRecording[]>([]);
-  const [customSessionTime, setCustomSessionTime] = useState(45); // Default to 45 minutes
-  const [isPaused, setIsPaused] = useState(false);
-  const [sectionProgress, setSectionProgress] = useState<Record<WhiteboardSection, number>>({
-    problem_discovery: 0,
-    problem_definition: 0,
-    ideation: 0,
-    prioritization: 0,
-    user_flow_wireframe: 0,
-    final_wrap_up: 0
-  });
+  const state = useSessionState();
+  const managers = useSessionManager(state);
   
-  const [selectedIndustry, setSelectedIndustry] = useState<Category | null>(null);
-
-  const selectIndustry = (industry: Category) => {
-    setSelectedIndustry(industry);
-    setCurrentChallenge(null); // Reset current challenge when industry changes
-  };
-
-  const generateRandomChallenge = (industry: Category) => {
-    const industrySpecificChallenges = challenges.filter(c => c.category === industry);
-    if (industrySpecificChallenges.length === 0) {
-      toast.error("No challenges found for this industry");
-      return null;
-    }
-    const randomIndex = Math.floor(Math.random() * industrySpecificChallenges.length);
-    return industrySpecificChallenges[randomIndex];
-  };
-
-  // Handler functions
-  const selectChallenge = (challengeId: string) => {
-    const challenge = challenges.find(c => c.id === challengeId);
-    if (challenge) {
-      setCurrentChallenge(challenge);
-      toast.success(`Selected challenge: ${challenge.title}`);
-    }
-  };
-
-  const startSession = () => {
-    if (!selectedIndustry) {
-      toast.error("Please select an industry first");
-      return;
-    }
-    
-    let industryForChallenge = selectedIndustry;
-    
-    // If 'random' was selected, pick a random industry now
-    if (selectedIndustry === 'random') {
-      const availableIndustries: Category[] = ['e-commerce', 'healthcare', 'finance', 'social', 'productivity'];
-      const randomIndex = Math.floor(Math.random() * availableIndustries.length);
-      industryForChallenge = availableIndustries[randomIndex];
-    }
-    
-    // Generate a random challenge for the selected or randomly chosen industry
-    const randomChallenge = generateRandomChallenge(industryForChallenge);
-    if (!randomChallenge) return;
-    
-    setCurrentChallenge(randomChallenge);
-    
-    const newSession: Session = {
-      id: `s${sessions.length + 1}`,
-      date: new Date().toISOString(),
-      challenge: randomChallenge,
-      duration: 0,
-      status: 'in-progress'
-    };
-    
-    setSessions([...sessions, newSession]);
-    setCurrentSession(newSession);
-    setCurrentSection('problem_discovery');
-    setRecordingTime(0);
-    setIsPaused(false);
-    
-    // Automatically start recording when session starts
-    setIsRecording(true);
-    
-    toast.success("Session started!");
-  };
-
-  const endSession = () => {
-    if (currentSession) {
-      // Generate feedback
-      const feedback: Feedback = generateSessionFeedback(currentSession);
-      
-      // Create an updated session with the correct typing
-      const updatedSession: Session = { 
-        ...currentSession, 
-        status: 'completed',
-        feedback: feedback
-      };
-      
-      // Update sessions with type-safe approach
-      setSessions(sessions.map(s => s.id === currentSession.id ? updatedSession : s));
-      setCurrentSession(null);
-      setIsPaused(false);
-      
-      // Stop recording if it's still active
-      if (isRecording) {
-        stopRecording();
-      }
-      
-      toast.success("Session ended! View your feedback on the dashboard.");
-    }
-  };
-
-  const startRecording = () => {
-    setIsRecording(true);
-    toast.success("Recording started");
-  };
-
-  const stopRecording = () => {
-    setIsRecording(false);
-    toast.success("Recording stopped");
-    
-    // In a real app, we would process the audio recording here
-    // For MVP, we're just simulating this
-    if (currentSession) {
-      const newRecording: AudioRecording = {
-        sessionId: currentSession.id,
-        audioBlob: new Blob(), // This would be the actual recording in a real app
-      };
-      addRecording(newRecording);
-    }
-  };
-
-  const updateSectionProgress = (section: WhiteboardSection, progress: number) => {
-    setSectionProgress(prev => ({
-      ...prev,
-      [section]: progress
-    }));
-  };
-
-  const addRecording = (recording: AudioRecording) => {
-    setAudioRecordings(prev => [...prev, recording]);
-  };
-
-  // Method to update recording time from session time
-  const updateRecordingTime = (time: number) => {
-    if (isRecording) {
-      setRecordingTime(time);
-    }
-  };
-
-  // Handle pausing and resuming the session
-  const handlePauseResumeSession = () => {
-    setIsPaused(!isPaused);
-    
-    if (isPaused) {
-      // Resuming session
-      if (!isRecording) {
-        startRecording();
-      }
-      toast("Session resumed");
-    } else {
-      // Pausing session
-      if (isRecording) {
-        stopRecording();
-      }
-      toast("Session paused");
-    }
-  };
-
-  // Create a stable context value object
   const contextValue = {
-    selectedIndustry,
-    selectIndustry,
-    challenges,
-    sessions,
-    currentChallenge,
-    currentSession,
-    currentSection,
-    isRecording,
-    recordingTime,
-    sectionProgress,
-    audioRecordings,
-    customSessionTime,
-    isPaused,
-    selectChallenge,
-    startSession,
-    endSession,
-    setCurrentSection,
-    startRecording,
-    stopRecording,
-    updateSectionProgress,
-    addRecording,
-    updateRecordingTime,
-    setCustomSessionTime,
-    handlePauseResumeSession
+    ...state,
+    ...managers,
   };
 
-  // Return the provider with the context value
   return (
     <SessionContext.Provider value={contextValue}>
       {children}
