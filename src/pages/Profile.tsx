@@ -1,5 +1,4 @@
-
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import NavBar from '@/components/NavBar';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -9,10 +8,72 @@ import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { toast } from 'sonner';
 import { Save, Bell, Volume2, User } from 'lucide-react';
+import { useAuth } from '@/context/AuthContext';
+import { supabase } from '@/integrations/supabase/client';
 
 const Profile = () => {
-  const handleSaveSettings = () => {
-    toast.success("Settings saved successfully!");
+  const { user } = useAuth();
+  const [loading, setLoading] = useState(false);
+  const [profile, setProfile] = useState({
+    full_name: '',
+    email: '',
+    avatar_url: '',
+  });
+
+  useEffect(() => {
+    getProfile();
+  }, [user]);
+
+  const getProfile = async () => {
+    try {
+      if (!user) return;
+
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('full_name, email, avatar_url')
+        .eq('id', user.id)
+        .single();
+
+      if (error) {
+        throw error;
+      }
+
+      if (data) {
+        setProfile({
+          full_name: data.full_name || '',
+          email: data.email || '',
+          avatar_url: data.avatar_url || '',
+        });
+      }
+    } catch (error) {
+      toast.error('Error loading profile');
+      console.error('Error loading profile:', error);
+    }
+  };
+
+  const handleSaveSettings = async () => {
+    try {
+      setLoading(true);
+      if (!user) throw new Error('No user logged in');
+
+      const { error } = await supabase
+        .from('profiles')
+        .update({
+          full_name: profile.full_name,
+          email: profile.email,
+          avatar_url: profile.avatar_url,
+          updated_at: new Date().toISOString(),
+        })
+        .eq('id', user.id);
+
+      if (error) throw error;
+      toast.success('Profile updated successfully!');
+    } catch (error) {
+      toast.error('Error updating profile');
+      console.error('Error updating profile:', error);
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -38,48 +99,33 @@ const Profile = () => {
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div className="space-y-2">
                     <Label htmlFor="name">Full Name</Label>
-                    <Input id="name" placeholder="Your name" defaultValue="Jane Designer" />
+                    <Input 
+                      id="name" 
+                      placeholder="Your name" 
+                      value={profile.full_name}
+                      onChange={(e) => setProfile({ ...profile, full_name: e.target.value })}
+                    />
                   </div>
                   
                   <div className="space-y-2">
                     <Label htmlFor="email">Email Address</Label>
-                    <Input id="email" type="email" placeholder="Your email" defaultValue="jane@example.com" />
+                    <Input 
+                      id="email" 
+                      type="email" 
+                      placeholder="Your email"
+                      value={profile.email}
+                      onChange={(e) => setProfile({ ...profile, email: e.target.value })}
+                    />
                   </div>
                 </div>
                 
-                <div className="space-y-2">
-                  <Label htmlFor="experience">Experience Level</Label>
-                  <Select defaultValue="mid-level">
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select your experience level" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="junior">Junior Designer (0-2 years)</SelectItem>
-                      <SelectItem value="mid-level">Mid-level Designer (2-5 years)</SelectItem>
-                      <SelectItem value="senior">Senior Designer (5+ years)</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-                
-                <div className="space-y-2">
-                  <Label htmlFor="industry">Industry Focus</Label>
-                  <Select defaultValue="e-commerce">
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select your primary industry" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="e-commerce">E-commerce</SelectItem>
-                      <SelectItem value="healthcare">Healthcare</SelectItem>
-                      <SelectItem value="finance">Finance</SelectItem>
-                      <SelectItem value="social">Social</SelectItem>
-                      <SelectItem value="productivity">Productivity</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-                
-                <Button onClick={handleSaveSettings} className="bg-brand-600 hover:bg-brand-700">
+                <Button 
+                  onClick={handleSaveSettings} 
+                  disabled={loading}
+                  className="bg-brand-600 hover:bg-brand-700"
+                >
                   <Save className="mr-2 h-4 w-4" />
-                  Save Changes
+                  {loading ? 'Saving...' : 'Save Changes'}
                 </Button>
               </CardContent>
             </Card>
