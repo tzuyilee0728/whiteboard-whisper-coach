@@ -1,6 +1,7 @@
 
 import React, { createContext, useContext } from 'react';
 import { Challenge, Session, WhiteboardSection, AudioRecording, Category } from '@/types';
+import { SessionProvider } from './SessionProvider';
 
 interface SessionContextType {
   challenges: Challenge[];
@@ -9,7 +10,7 @@ interface SessionContextType {
   currentSession: Session | null;
   currentSection: WhiteboardSection;
   isRecording: boolean;
-  setIsRecording: (isRecording: boolean) => void;
+  setIsRecording: (isRecording: boolean) => void; // Added this line to fix the error
   recordingTime: number;
   sectionProgress: Record<WhiteboardSection, number>;
   audioRecordings: AudioRecording[];
@@ -31,7 +32,7 @@ interface SessionContextType {
 }
 
 // Create context with undefined as default value
-export const SessionContext = createContext<SessionContextType | undefined>(undefined);
+const SessionContext = createContext<SessionContextType | undefined>(undefined);
 
 // Custom hook to use the session context
 export const useSession = () => {
@@ -41,3 +42,5 @@ export const useSession = () => {
   }
   return context;
 };
+
+export { SessionContext, SessionProvider };
