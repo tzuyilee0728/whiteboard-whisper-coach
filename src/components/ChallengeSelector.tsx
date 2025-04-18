@@ -49,7 +49,10 @@ const IndustrySelector = () => {
       <label className="block text-sm font-medium text-gray-700 mb-1">
         Select an Industry
       </label>
-      <Select onValueChange={handleSelectIndustry} value={selectedIndustry || ''}>
+      <Select 
+        onValueChange={handleSelectIndustry} 
+        value={selectedIndustry || 'random'}  // Set default to 'random'
+      >
         <SelectTrigger className="w-full">
           <SelectValue placeholder="Choose an industry" />
         </SelectTrigger>
