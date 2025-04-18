@@ -10,3 +10,32 @@ export const arrayBufferToBase64 = (buffer: ArrayBuffer): string => {
   
   return window.btoa(binary);
 };
+
+export const base64ToArrayBuffer = (base64: string): ArrayBuffer => {
+  const binaryString = window.atob(base64);
+  const len = binaryString.length;
+  const bytes = new Uint8Array(len);
+  
+  for (let i = 0; i < len; i++) {
+    bytes[i] = binaryString.charCodeAt(i);
+  }
+  
+  return bytes.buffer;
+};
+
+export const createAudioBlobFromBase64 = (base64: string, mimeType = 'audio/webm'): Blob => {
+  const arrayBuffer = base64ToArrayBuffer(base64);
+  return new Blob([arrayBuffer], { type: mimeType });
+};
+
+export const playAudioBlob = (blob: Blob): HTMLAudioElement => {
+  const audioUrl = URL.createObjectURL(blob);
+  const audio = new Audio(audioUrl);
+  
+  audio.onended = () => {
+    URL.revokeObjectURL(audioUrl);
+  };
+  
+  audio.play();
+  return audio;
+};

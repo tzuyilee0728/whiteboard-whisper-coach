@@ -1,5 +1,5 @@
 
-import React, { useEffect } from 'react';
+import React, { useEffect, useRef } from 'react';
 import { useSession } from '@/context/SessionContext';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -19,8 +19,23 @@ const AudioRecorder = () => {
   const {
     startRecording,
     stopRecording,
-    error
+    error,
+    getAllAudioAsBlob
   } = useAudioRecorder();
+
+  // Store reference globally for access from other components
+  const recorderRef = useRef({
+    getAllAudioAsBlob
+  });
+
+  useEffect(() => {
+    // Expose the audio recorder to the window for global access
+    window.audioRecorder = recorderRef.current;
+    
+    return () => {
+      delete window.audioRecorder;
+    };
+  }, [getAllAudioAsBlob]);
   
   // Format recording time
   const formatTime = (seconds: number): string => {
@@ -31,6 +46,7 @@ const AudioRecorder = () => {
   
   // Combined handler to pause/resume both session and recording
   const handleRecordingToggle = () => {
+    console.log("Recording toggle button clicked. Current state:", isRecording ? "recording" : "not recording");
     if (isRecording) {
       stopRecording();
       // If session isn't already paused, pause it
@@ -85,6 +101,7 @@ const AudioRecorder = () => {
             variant={isRecording ? "destructive" : "default"}
             className={`w-full ${!isRecording ? 'bg-brand-600 hover:bg-brand-700' : ''}`}
             disabled={!currentSession}
+            data-recording={isRecording ? "true" : "false"}
           >
             {isRecording ? (
               <>

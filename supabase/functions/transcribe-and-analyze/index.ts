@@ -21,6 +21,8 @@ serve(async (req) => {
       throw new Error('No audio data provided');
     }
 
+    console.log("Received audio data for transcription, section:", section);
+
     // Decode the base64 audio string
     let binaryAudio;
     try {
@@ -35,6 +37,8 @@ serve(async (req) => {
     for (let i = 0; i < binaryAudio.length; i++) {
       bytes[i] = binaryAudio.charCodeAt(i);
     }
+
+    console.log(`Processing audio chunk: ${bytes.length} bytes`);
 
     // OpenAI Whisper Transcription
     const openai = new OpenAI({
@@ -54,7 +58,7 @@ serve(async (req) => {
     });
 
     const transcription = transcriptionResponse.text;
-    console.log("Transcription:", transcription);
+    console.log("Transcription result:", transcription);
 
     if (!transcription || transcription.trim() === '') {
       return new Response(
