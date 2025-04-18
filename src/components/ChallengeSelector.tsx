@@ -9,11 +9,13 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { Category } from '@/types';
+import { Shuffle } from 'lucide-react';
 
 const IndustrySelector = () => {
   const { selectIndustry, selectedIndustry } = useSession();
   
-  const industries: Category[] = [
+  const industries: (Category | 'random')[] = [
+    'random',
     'e-commerce',
     'healthcare',
     'finance',
@@ -21,12 +23,18 @@ const IndustrySelector = () => {
     'productivity'
   ];
   
-  const handleSelectIndustry = (industry: Category) => {
-    selectIndustry(industry);
+  const handleSelectIndustry = (value: string) => {
+    if (value === 'random') {
+      const randomIndex = Math.floor(Math.random() * (industries.length - 1)) + 1; // Skip 'random' option
+      selectIndustry(industries[randomIndex] as Category);
+    } else {
+      selectIndustry(value as Category);
+    }
   };
   
-  const getIndustryColor = (industry: Category) => {
+  const getIndustryColor = (industry: Category | 'random') => {
     switch(industry) {
+      case 'random': return 'bg-violet-100 text-violet-800';
       case 'e-commerce': return 'bg-purple-100 text-purple-800';
       case 'healthcare': return 'bg-blue-100 text-blue-800';
       case 'finance': return 'bg-emerald-100 text-emerald-800';
@@ -52,7 +60,10 @@ const IndustrySelector = () => {
               value={industry}
               className={`py-3 ${getIndustryColor(industry)}`}
             >
-              <div className="capitalize">{industry.replace('-', ' ')}</div>
+              <div className="capitalize flex items-center gap-2">
+                {industry === 'random' && <Shuffle className="h-4 w-4" />}
+                {industry.replace('-', ' ')}
+              </div>
             </SelectItem>
           ))}
         </SelectContent>
@@ -62,4 +73,3 @@ const IndustrySelector = () => {
 };
 
 export default IndustrySelector;
-
