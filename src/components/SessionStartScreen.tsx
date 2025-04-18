@@ -1,5 +1,4 @@
-
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import IndustrySelector from '@/components/ChallengeSelector';
@@ -16,10 +15,16 @@ interface SessionStartScreenProps {
 }
 
 const SessionStartScreen: React.FC<SessionStartScreenProps> = ({ handleStartSession }) => {
-  const { setCustomSessionTime, selectedIndustry } = useSession();
+  const { setCustomSessionTime, selectedIndustry, selectIndustry } = useSession();
   const [isCountingDown, setIsCountingDown] = useState(false);
   const [countdown, setCountdown] = useState(5);
   const [customTime, setCustomTime] = useState(45);
+
+  useEffect(() => {
+    if (!selectedIndustry) {
+      selectIndustry('random');
+    }
+  }, [selectedIndustry, selectIndustry]);
   
   const sections: WhiteboardSection[] = [
     'problem_discovery',
@@ -33,7 +38,6 @@ const SessionStartScreen: React.FC<SessionStartScreenProps> = ({ handleStartSess
   const totalSessionMinutes = customTime;
   
   const startCountdown = () => {
-    // Set the custom session time in the context before starting countdown
     setCustomSessionTime(customTime);
     setIsCountingDown(true);
     setCountdown(5);
