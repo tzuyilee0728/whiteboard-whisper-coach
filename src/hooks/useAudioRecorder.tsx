@@ -55,6 +55,26 @@ export const useAudioRecorder = () => {
     }
   }, [audioStream, isRecording, isPaused]);
 
+  // Auto-start recording when isRecording becomes true
+  useEffect(() => {
+    if (isRecording && !mediaRecorder) {
+      // Request microphone permission and start recording
+      requestMicrophonePermission().then((stream) => {
+        if (stream) {
+          // The mediaRecorder will be set in the other useEffect,
+          // and then we'll start recording in the next effect
+        }
+      });
+    } else if (isRecording && mediaRecorder && mediaRecorder.state !== 'recording') {
+      audioChunksRef.current = [];
+      mediaRecorder.start(1000); // Capture in 1-second chunks for real-time processing
+      console.log("MediaRecorder started");
+    } else if (!isRecording && mediaRecorder && mediaRecorder.state === 'recording') {
+      mediaRecorder.stop();
+      console.log("MediaRecorder stopped");
+    }
+  }, [isRecording, mediaRecorder]);
+
   // Start recording function
   const startRecording = async () => {
     if (!audioStream) {
@@ -66,6 +86,12 @@ export const useAudioRecorder = () => {
       audioChunksRef.current = [];
       mediaRecorder.start(1000); // Capture in 1-second chunks for real-time processing
       setIsRecording(true);
+      console.log("Recording started via startRecording()");
+    } else if (!mediaRecorder) {
+      // If mediaRecorder isn't ready yet, just set isRecording to true
+      // and let the useEffect handle it when mediaRecorder is ready
+      setIsRecording(true);
+      console.log("isRecording set to true, waiting for mediaRecorder");
     }
   };
 
@@ -74,6 +100,7 @@ export const useAudioRecorder = () => {
     if (mediaRecorder && mediaRecorder.state === 'recording') {
       mediaRecorder.stop();
       setIsRecording(false);
+      console.log("Recording stopped via stopRecording()");
       return new Blob(audioChunksRef.current, { type: 'audio/webm' });
     }
     return null;

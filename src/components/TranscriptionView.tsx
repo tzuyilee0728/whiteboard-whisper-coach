@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect, useRef } from 'react';
-import { Mic, AlertTriangle, PauseCircle } from 'lucide-react';
+import { Mic, AlertTriangle, Loader2 } from 'lucide-react';
 import { useSession } from '@/context/SessionContext';
 import { transcriptionService } from '@/services/transcriptionService';
 import { supabase } from '@/integrations/supabase/client';
@@ -9,11 +9,12 @@ const TranscriptionView = () => {
   const { isRecording, currentSession, currentSection, isPaused } = useSession();
   const [transcription, setTranscription] = useState<string>('');
   const [feedback, setFeedback] = useState<string[]>([]);
+  const [isProcessing, setIsProcessing] = useState<boolean>(false);
   const transcriptionRef = useRef<HTMLDivElement>(null);
   const audioChunksRef = useRef<Blob[]>([]);
   const processingRef = useRef<boolean>(false);
 
-  // Subscribe to transcription updates
+  // Subscribe to transcription updates from the transcription service
   useEffect(() => {
     const handleTranscriptUpdate = (text: string) => {
       setTranscription(text);
@@ -22,7 +23,6 @@ const TranscriptionView = () => {
     transcriptionService.onTranscriptUpdate(handleTranscriptUpdate);
 
     return () => {
-      // This is a no-op but it's good practice
       transcriptionService.onTranscriptUpdate(null);
     };
   }, []);
@@ -34,6 +34,7 @@ const TranscriptionView = () => {
     }
 
     processingRef.current = true;
+    setIsProcessing(true);
 
     try {
       const arrayBuffer = await audioBlob.arrayBuffer();
@@ -46,7 +47,10 @@ const TranscriptionView = () => {
         })
       });
 
-      if (error) throw error;
+      if (error) {
+        console.error("Supabase function error:", error);
+        throw error;
+      }
 
       if (data.transcription && data.transcription.trim() !== '') {
         setTranscription(prev => 
@@ -61,23 +65,25 @@ const TranscriptionView = () => {
       console.error('Transcription error:', err);
     } finally {
       processingRef.current = false;
+      setIsProcessing(false);
     }
   };
 
   // Handle audio chunks from recording
   useEffect(() => {
-    const handleAudioData = async (event: CustomEvent<Blob>) => {
-      if (event.detail && event.detail.size > 0) {
-        audioChunksRef.current.push(event.detail);
-        await processAudioChunk(event.detail);
+    const handleAudioData = async (event: Event) => {
+      const customEvent = event as CustomEvent<Blob>;
+      if (customEvent.detail && customEvent.detail.size > 0) {
+        audioChunksRef.current.push(customEvent.detail);
+        await processAudioChunk(customEvent.detail);
       }
     };
 
     // Listen for audio data events
-    window.addEventListener('audioData' as any, handleAudioData as any);
+    window.addEventListener('audioData', handleAudioData);
 
     return () => {
-      window.removeEventListener('audioData' as any, handleAudioData as any);
+      window.removeEventListener('audioData', handleAudioData);
     };
   }, [currentSection]);
 
@@ -96,6 +102,9 @@ const TranscriptionView = () => {
           Live Transcription
           {isRecording && !isPaused && (
             <span className="ml-2 h-2 w-2 rounded-full bg-red-500 animate-pulse"></span>
+          )}
+          {isProcessing && (
+            <Loader2 className="ml-2 h-4 w-4 animate-spin" />
           )}
         </div>
       </div>

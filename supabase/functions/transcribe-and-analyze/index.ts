@@ -1,3 +1,4 @@
+
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import OpenAI from "https://esm.sh/openai@4.24.4";
 import Replicate from "https://esm.sh/replicate@0.25.2";
@@ -16,22 +17,51 @@ serve(async (req) => {
   try {
     const { audio, section } = await req.json();
 
-    // Convert ArrayBuffer to base64
-    const base64Audio = btoa(
-      String.fromCharCode.apply(null, new Uint8Array(audio))
-    );
+    if (!audio) {
+      throw new Error('No audio data provided');
+    }
+
+    // Decode the base64 audio string
+    let binaryAudio;
+    try {
+      binaryAudio = atob(audio);
+    } catch (e) {
+      console.error('Base64 decoding error:', e);
+      throw new Error('Invalid audio data format');
+    }
+
+    // Convert string to Uint8Array
+    const bytes = new Uint8Array(binaryAudio.length);
+    for (let i = 0; i < binaryAudio.length; i++) {
+      bytes[i] = binaryAudio.charCodeAt(i);
+    }
 
     // OpenAI Whisper Transcription
     const openai = new OpenAI({
       apiKey: Deno.env.get('OPENAI_API_KEY')
     });
 
+    const audioBlob = new Blob([bytes], { type: 'audio/webm' });
+    
+    // Create a File from the Blob
+    const audioFile = new File([audioBlob], 'audio.webm', { type: 'audio/webm' });
+
+    console.log("Processing audio chunk, size:", audioFile.size, "bytes");
+
     const transcriptionResponse = await openai.audio.transcriptions.create({
-      file: new File([base64Audio], 'audio.webm', { type: 'audio/webm' }),
+      file: audioFile,
       model: 'whisper-1'
     });
 
     const transcription = transcriptionResponse.text;
+    console.log("Transcription:", transcription);
+
+    if (!transcription || transcription.trim() === '') {
+      return new Response(
+        JSON.stringify({ transcription: '', feedback: '' }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
 
     // Updated Perplexity prompt with more specific guidance
     const perplexityResponse = await fetch('https://api.perplexity.ai/chat/completions', {
@@ -69,6 +99,7 @@ serve(async (req) => {
 
     const perplexityData = await perplexityResponse.json();
     const feedback = perplexityData.choices[0]?.message?.content || '';
+    console.log("Generated feedback:", feedback);
 
     return new Response(
       JSON.stringify({ transcription, feedback }), 

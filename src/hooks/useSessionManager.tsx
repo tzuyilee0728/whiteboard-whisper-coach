@@ -67,13 +67,18 @@ export const useSessionManager = (state: ReturnType<typeof import('./useSessionS
     state.setCurrentSection('problem_discovery');
     state.setRecordingTime(0);
     state.setIsPaused(false);
-    state.setIsRecording(true);
     
-    // Start the transcription service
+    // First start the transcription service
+    transcriptionService.start();
+    transcriptionInitialized.current = true;
+    
+    // Then set recording to true (this will trigger the recorder to start)
     setTimeout(() => {
-      transcriptionService.start();
-      transcriptionInitialized.current = true;
+      state.setIsRecording(true);
     }, 500);
+    
+    // Also start the AI analysis service
+    aiAnalysisService.startAnalysis('problem_discovery');
     
     toast.success("Session started!");
   }, [state, generateRandomChallenge]);
@@ -90,31 +95,33 @@ export const useSessionManager = (state: ReturnType<typeof import('./useSessionS
       state.setSessions(state.sessions.map(s => 
         s.id === state.currentSession.id ? updatedSession : s
       ));
-      state.setCurrentSession(null);
-      state.setIsPaused(false);
       
+      // First stop recording
       if (state.isRecording) {
-        stopRecording();
+        state.setIsRecording(false);
       }
       
-      // Stop transcription and AI analysis services
+      // Then stop transcription and AI analysis services
       transcriptionService.stop();
       transcriptionInitialized.current = false;
       aiAnalysisService.stopAnalysis();
+      
+      // Finally clear the session state
+      state.setCurrentSession(null);
+      state.setIsPaused(false);
       
       toast.success("Session ended! View your feedback on the dashboard.");
     }
   }, [state]);
 
   const startRecording = useCallback(() => {
-    state.setIsRecording(true);
-    
     // Start the transcription service if not already started
     if (!transcriptionInitialized.current) {
       transcriptionService.start();
       transcriptionInitialized.current = true;
     }
     
+    state.setIsRecording(true);
     toast.success("Recording started");
   }, [state]);
 
@@ -149,26 +156,25 @@ export const useSessionManager = (state: ReturnType<typeof import('./useSessionS
   }, [state]);
 
   const updateRecordingTime = useCallback((time: number) => {
-    if (state.isRecording) {
+    if (state.isRecording || state.isPaused) {
       state.setRecordingTime(time);
     }
   }, [state]);
 
   const handlePauseResumeSession = useCallback(() => {
-    state.setIsPaused(!state.isPaused);
+    const wasPaused = state.isPaused;
+    state.setIsPaused(!wasPaused);
     
-    if (state.isPaused) {
-      if (!state.isRecording) {
-        startRecording();
-      }
+    if (wasPaused) {
+      // Was paused, now resuming
+      startRecording();
       toast("Session resumed");
     } else {
-      if (state.isRecording) {
-        stopRecording();
-      }
+      // Was running, now pausing
+      stopRecording();
       toast("Session paused");
     }
-  }, [state.isPaused, state.isRecording, stopRecording, startRecording]);
+  }, [state.isPaused, startRecording, stopRecording]);
 
   return {
     selectIndustry,
