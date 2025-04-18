@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { useSession } from '@/context/SessionContext';
 import { 
@@ -51,7 +50,7 @@ const IndustrySelector = () => {
       </label>
       <Select 
         onValueChange={handleSelectIndustry} 
-        value={selectedIndustry || 'random'}  // Set default to 'random'
+        value={selectedIndustry || 'random'}
       >
         <SelectTrigger className="w-full">
           <SelectValue placeholder="Choose an industry" />
@@ -76,4 +75,3 @@ const IndustrySelector = () => {
 };
 
 export default IndustrySelector;
-

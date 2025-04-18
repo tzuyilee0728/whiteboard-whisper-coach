@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
@@ -15,7 +16,7 @@ interface SessionStartScreenProps {
 }
 
 const SessionStartScreen: React.FC<SessionStartScreenProps> = ({ handleStartSession }) => {
-  const { currentChallenge, setCustomSessionTime, selectedIndustry } = useSession();
+  const { setCustomSessionTime, selectedIndustry } = useSession();
   const [isCountingDown, setIsCountingDown] = useState(false);
   const [countdown, setCountdown] = useState(5);
   const [customTime, setCustomTime] = useState(45);
@@ -29,18 +30,11 @@ const SessionStartScreen: React.FC<SessionStartScreenProps> = ({ handleStartSess
     'final_wrap_up'
   ];
   
-  // Calculate total session time in minutes
   const totalSessionMinutes = customTime;
   
   const startCountdown = () => {
-    if (!selectedIndustry) {
-      toast.error("Please select an industry first");
-      return;
-    }
-
     // Set the custom session time in the context before starting countdown
     setCustomSessionTime(customTime);
-    
     setIsCountingDown(true);
     setCountdown(5);
     
@@ -49,7 +43,6 @@ const SessionStartScreen: React.FC<SessionStartScreenProps> = ({ handleStartSess
         if (prev <= 1) {
           clearInterval(countdownInterval);
           setTimeout(() => {
-            // Move session start to next tick to avoid state updates during rendering
             handleStartSession();
           }, 0);
           return 0;
@@ -60,7 +53,7 @@ const SessionStartScreen: React.FC<SessionStartScreenProps> = ({ handleStartSess
   };
 
   const incrementTime = () => {
-    setCustomTime(prev => Math.min(prev + 5, 120)); // Max 120 minutes (2 hours)
+    setCustomTime(prev => Math.min(prev + 5, 120)); // Max 120 minutes
   };
 
   const decrementTime = () => {
@@ -90,75 +83,73 @@ const SessionStartScreen: React.FC<SessionStartScreenProps> = ({ handleStartSess
             <div className="space-y-4">
               <IndustrySelector />
               
-              {selectedIndustry && (
-                <div className="mt-6 border-t pt-4">
-                  <div className="bg-blue-50 rounded-md p-4 mb-6">
-                    <AlertTitle className="flex items-center text-blue-800 mb-2">
-                      <Clock className="mr-2 h-5 w-5" />
-                      Session Structure
-                    </AlertTitle>
-                    <AlertDescription className="text-blue-800">
-                      <p className="mb-2">This session will guide you through these 6 sections:</p>
-                      <ul className="list-disc pl-5 space-y-1">
-                        {sections.map((section) => (
-                          <li key={section}>
-                            <span className="font-medium">{sectionTimings[section].title}</span>
-                            <span className="text-sm text-blue-700"> ({sectionTimings[section].duration} min)</span>
-                          </li>
-                        ))}
-                      </ul>
+              <div className="mt-6 border-t pt-4">
+                <div className="bg-blue-50 rounded-md p-4 mb-6">
+                  <AlertTitle className="flex items-center text-blue-800 mb-2">
+                    <Clock className="mr-2 h-5 w-5" />
+                    Session Structure
+                  </AlertTitle>
+                  <AlertDescription className="text-blue-800">
+                    <p className="mb-2">This session will guide you through these 6 sections:</p>
+                    <ul className="list-disc pl-5 space-y-1">
+                      {sections.map((section) => (
+                        <li key={section}>
+                          <span className="font-medium">{sectionTimings[section].title}</span>
+                          <span className="text-sm text-blue-700"> ({sectionTimings[section].duration} min)</span>
+                        </li>
+                      ))}
+                    </ul>
 
-                      <div className="mt-4 mb-2">
-                        <div className="flex justify-between items-center mb-2">
-                          <span className="font-medium">Set Total Session Time:</span>
-                          <div className="flex items-center space-x-2">
-                            <Button 
-                              variant="outline" 
-                              size="sm" 
-                              className="h-8 w-8 p-0" 
-                              onClick={decrementTime}
-                            >
-                              <Minus className="h-4 w-4" />
-                            </Button>
-                            <span className="text-blue-800 font-semibold w-16 text-center">{customTime} min</span>
-                            <Button 
-                              variant="outline" 
-                              size="sm" 
-                              className="h-8 w-8 p-0" 
-                              onClick={incrementTime}
-                            >
-                              <Plus className="h-4 w-4" />
-                            </Button>
-                          </div>
-                        </div>
-                        <Slider 
-                          value={[customTime]} 
-                          min={15} 
-                          max={120} 
-                          step={5} 
-                          onValueChange={handleSliderChange}
-                          className="my-4"
-                        />
-                        <div className="flex justify-between text-xs text-blue-700">
-                          <span>15 min</span>
-                          <span>120 min</span>
+                    <div className="mt-4 mb-2">
+                      <div className="flex justify-between items-center mb-2">
+                        <span className="font-medium">Set Total Session Time:</span>
+                        <div className="flex items-center space-x-2">
+                          <Button 
+                            variant="outline" 
+                            size="sm" 
+                            className="h-8 w-8 p-0" 
+                            onClick={decrementTime}
+                          >
+                            <Minus className="h-4 w-4" />
+                          </Button>
+                          <span className="text-blue-800 font-semibold w-16 text-center">{customTime} min</span>
+                          <Button 
+                            variant="outline" 
+                            size="sm" 
+                            className="h-8 w-8 p-0" 
+                            onClick={incrementTime}
+                          >
+                            <Plus className="h-4 w-4" />
+                          </Button>
                         </div>
                       </div>
-                      
-                      <p className="mt-4 font-medium">
-                        Total time: <span className="font-bold">{totalSessionMinutes} minutes</span>
-                      </p>
-                    </AlertDescription>
-                  </div>
-                  
-                  <Button 
-                    onClick={startCountdown}
-                    className="w-full bg-brand-600 hover:bg-brand-700"
-                  >
-                    Start Practice Session
-                  </Button>
+                      <Slider 
+                        value={[customTime]} 
+                        min={15} 
+                        max={120} 
+                        step={5} 
+                        onValueChange={handleSliderChange}
+                        className="my-4"
+                      />
+                      <div className="flex justify-between text-xs text-blue-700">
+                        <span>15 min</span>
+                        <span>120 min</span>
+                      </div>
+                    </div>
+                    
+                    <p className="mt-4 font-medium">
+                      Total time: <span className="font-bold">{totalSessionMinutes} minutes</span>
+                    </p>
+                  </AlertDescription>
                 </div>
-              )}
+                
+                <Button 
+                  onClick={startCountdown}
+                  className="w-full bg-brand-600 hover:bg-brand-700"
+                >
+                  Start Practice Session
+                </Button>
+              </div>
             </div>
           )}
         </CardContent>
