@@ -43,16 +43,17 @@ export class TranscriptionService {
   private onTranscriptUpdateCallback: ((transcript: string) => void) | null = null;
   private interimTranscript: string = '';
   private finalTranscript: string = '';
+  private isRecognitionActive: boolean = false;
 
   constructor() {
     // Check if browser supports the Web Speech API
-    if ('SpeechRecognition' in window || 'webkitSpeechRecognition' in window) {
+    if (typeof window !== 'undefined' && ('SpeechRecognition' in window || 'webkitSpeechRecognition' in window)) {
       // @ts-ignore - TypeScript doesn't know about webkitSpeechRecognition
       const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
       this.recognitionInstance = new SpeechRecognition();
       this.configureRecognition();
     } else {
-      toast.error('Your browser does not support speech recognition.');
+      console.log('Speech Recognition API not supported in this browser');
     }
   }
 
@@ -81,14 +82,15 @@ export class TranscriptionService {
       if (this.onTranscriptUpdateCallback) {
         this.onTranscriptUpdateCallback(currentTranscript);
       }
-      
-      // If this is real-time, we'd send this to the AI analysis service here
     };
 
     this.recognitionInstance.onerror = (event) => {
       console.error('Speech recognition error:', event.error);
       if (event.error === 'not-allowed') {
         toast.error('Microphone access denied. Please allow microphone access.');
+      } else if (event.error === 'network') {
+        // Silently handle network errors, which are common in development
+        console.log('Network error in speech recognition - this is normal in development');
       } else {
         toast.error(`Speech recognition error: ${event.error}`);
       }
@@ -98,8 +100,13 @@ export class TranscriptionService {
   public start() {
     if (this.recognitionInstance) {
       try {
-        this.recognitionInstance.start();
-        return true;
+        // Only start if not already active
+        if (!this.isRecognitionActive) {
+          this.recognitionInstance.start();
+          this.isRecognitionActive = true;
+          return true;
+        }
+        return true; // Already running is considered a success
       } catch (error) {
         console.error('Error starting speech recognition:', error);
         toast.error('Failed to start speech recognition.');
@@ -113,6 +120,7 @@ export class TranscriptionService {
     if (this.recognitionInstance) {
       try {
         this.recognitionInstance.stop();
+        this.isRecognitionActive = false;
         return true;
       } catch (error) {
         console.error('Error stopping speech recognition:', error);

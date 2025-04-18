@@ -38,7 +38,7 @@ const SessionStartScreen: React.FC<SessionStartScreenProps> = ({ handleStartSess
       return;
     }
 
-    // Set the custom session time in the context
+    // Set the custom session time in the context before starting countdown
     setCustomSessionTime(customTime);
     
     setIsCountingDown(true);
@@ -48,8 +48,10 @@ const SessionStartScreen: React.FC<SessionStartScreenProps> = ({ handleStartSess
       setCountdown(prev => {
         if (prev <= 1) {
           clearInterval(countdownInterval);
-          // Start the session which will trigger the recording to start automatically
-          handleStartSession();
+          setTimeout(() => {
+            // Move session start to next tick to avoid state updates during rendering
+            handleStartSession();
+          }, 0);
           return 0;
         }
         return prev - 1;
