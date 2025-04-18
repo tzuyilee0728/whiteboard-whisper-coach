@@ -1,4 +1,3 @@
-
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
 
@@ -50,7 +49,6 @@ export class TranscriptionService {
   private interimTranscript: string = '';
   private finalTranscript: string = '';
   private isRecognitionActive: boolean = false;
-  private apiConfig: TranscriptionAPIConfig | null = null;
   private isUsingAPI: boolean = false;
   private audioQueue: Blob[] = [];
   private isProcessingAudio: boolean = false;
@@ -64,6 +62,7 @@ export class TranscriptionService {
       this.configureRecognition();
     } else {
       console.log('Speech Recognition API not supported in this browser, will use external API');
+      this.isUsingAPI = true;
     }
   }
 
@@ -107,55 +106,18 @@ export class TranscriptionService {
     };
   }
 
-  // Configure the external API
-  public configureAPI(config: TranscriptionAPIConfig) {
-    this.apiConfig = config;
-    this.isUsingAPI = true;
-    console.log('Transcription API configured');
-  }
-
-  // Process audio chunk with external API
   public async processAudioChunk(audioChunk: Blob) {
-    if (!this.isUsingAPI || !this.apiConfig) {
-      return;
-    }
-
-    this.audioQueue.push(audioChunk);
-    
-    if (!this.isProcessingAudio) {
-      this.processAudioQueue();
-    }
-  }
-
-  private async processAudioQueue() {
-    if (this.audioQueue.length === 0 || this.isProcessingAudio) {
-      return;
-    }
-
-    this.isProcessingAudio = true;
-    
     try {
-      const audioChunk = this.audioQueue.shift();
-      
-      if (!audioChunk || !this.apiConfig) {
-        this.isProcessingAudio = false;
-        return;
-      }
-
       const arrayBuffer = await audioChunk.arrayBuffer();
       const base64Audio = this.arrayBufferToBase64(arrayBuffer);
       
-      // Send to Supabase Edge Function
       const { data, error } = await supabase.functions.invoke('transcribe-and-analyze', {
-        body: {
-          audio: base64Audio,
-          language: this.apiConfig.language,
-        }
+        body: { audio: base64Audio }
       });
 
       if (error) throw error;
 
-      if (data.transcription) {
+      if (data?.transcription) {
         this.finalTranscript += ' ' + data.transcription;
         
         if (this.onTranscriptUpdateCallback) {
@@ -164,15 +126,7 @@ export class TranscriptionService {
       }
     } catch (error) {
       console.error('Error processing audio for transcription:', error);
-      if (this.audioQueue.length === 0) {
-        toast.error('Error processing audio');
-      }
-    } finally {
-      this.isProcessingAudio = false;
-      
-      if (this.audioQueue.length > 0) {
-        setTimeout(() => this.processAudioQueue(), 100);
-      }
+      toast.error('Error processing audio');
     }
   }
 
@@ -189,19 +143,11 @@ export class TranscriptionService {
   }
 
   public start() {
-    if (this.isUsingAPI && this.apiConfig) {
-      // When using external API, we just mark as active
-      this.isRecognitionActive = true;
-      return true;
-    } else if (this.recognitionInstance) {
+    if (this.recognitionInstance) {
       try {
-        // Only start if not already active
-        if (!this.isRecognitionActive) {
-          this.recognitionInstance.start();
-          this.isRecognitionActive = true;
-          return true;
-        }
-        return true; // Already running is considered a success
+        this.recognitionInstance.start();
+        this.isRecognitionActive = true;
+        return true;
       } catch (error) {
         console.error('Error starting speech recognition:', error);
         toast.error('Failed to start speech recognition.');
@@ -212,12 +158,7 @@ export class TranscriptionService {
   }
 
   public stop() {
-    if (this.isUsingAPI) {
-      // When using external API, we just mark as inactive
-      this.isRecognitionActive = false;
-      this.audioQueue = []; // Clear the queue
-      return true;
-    } else if (this.recognitionInstance) {
+    if (this.recognitionInstance) {
       try {
         this.recognitionInstance.stop();
         this.isRecognitionActive = false;
@@ -233,7 +174,6 @@ export class TranscriptionService {
   public reset() {
     this.finalTranscript = '';
     this.interimTranscript = '';
-    this.audioQueue = []; // Clear any pending audio
   }
 
   public onTranscriptUpdate(callback: (transcript: string) => void) {
@@ -245,5 +185,4 @@ export class TranscriptionService {
   }
 }
 
-// Create a singleton instance to be used throughout the app
 export const transcriptionService = new TranscriptionService();
