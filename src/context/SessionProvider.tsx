@@ -62,8 +62,17 @@ export const SessionProvider: React.FC<SessionProviderProps> = ({ children }) =>
       return;
     }
     
-    // Generate a random challenge for the selected industry
-    const randomChallenge = generateRandomChallenge(selectedIndustry);
+    let industryForChallenge = selectedIndustry;
+    
+    // If 'random' was selected, pick a random industry now
+    if (selectedIndustry === 'random') {
+      const availableIndustries: Category[] = ['e-commerce', 'healthcare', 'finance', 'social', 'productivity'];
+      const randomIndex = Math.floor(Math.random() * availableIndustries.length);
+      industryForChallenge = availableIndustries[randomIndex];
+    }
+    
+    // Generate a random challenge for the selected or randomly chosen industry
+    const randomChallenge = generateRandomChallenge(industryForChallenge);
     if (!randomChallenge) return;
     
     setCurrentChallenge(randomChallenge);

@@ -25,8 +25,8 @@ const IndustrySelector = () => {
   
   const handleSelectIndustry = (value: string) => {
     if (value === 'random') {
-      const randomIndex = Math.floor(Math.random() * (industries.length - 1)) + 1; // Skip 'random' option
-      selectIndustry(industries[randomIndex] as Category);
+      // Just set it as random, actual industry will be selected when session starts
+      selectIndustry('random' as Category);
     } else {
       selectIndustry(value as Category);
     }
@@ -73,3 +73,4 @@ const IndustrySelector = () => {
 };
 
 export default IndustrySelector;
+

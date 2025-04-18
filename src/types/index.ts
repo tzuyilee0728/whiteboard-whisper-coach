@@ -1,4 +1,4 @@
-export type Category = 'e-commerce' | 'healthcare' | 'finance' | 'social' | 'productivity';
+export type Category = 'e-commerce' | 'healthcare' | 'finance' | 'social' | 'productivity' | 'random';
 
 export interface Challenge {
   id: string;
