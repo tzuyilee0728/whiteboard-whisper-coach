@@ -1,20 +1,26 @@
 
-import React from 'react';
+import React, { useEffect } from 'react';
 import { useSession } from '@/context/SessionContext';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Mic, MicOff, Clock } from 'lucide-react';
+import { useAudioRecorder } from '@/hooks/useAudioRecorder';
+import { toast } from 'sonner';
 
 const AudioRecorder = () => {
   const { 
     isRecording, 
     recordingTime, 
-    startRecording, 
-    stopRecording, 
     currentSession,
     isPaused,
     handlePauseResumeSession
   } = useSession();
+  
+  const {
+    startRecording,
+    stopRecording,
+    error
+  } = useAudioRecorder();
   
   // Format recording time
   const formatTime = (seconds: number): string => {
@@ -39,6 +45,13 @@ const AudioRecorder = () => {
       }
     }
   };
+  
+  // Show error if microphone access is denied
+  useEffect(() => {
+    if (error) {
+      toast.error(error);
+    }
+  }, [error]);
   
   return (
     <Card>

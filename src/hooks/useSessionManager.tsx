@@ -3,6 +3,8 @@ import { useCallback } from 'react';
 import { Category, Challenge, AudioRecording, WhiteboardSection } from '@/types';
 import { generateSessionFeedback } from '@/context/sessionUtils';
 import { toast } from 'sonner';
+import { transcriptionService } from '@/services/transcriptionService';
+import { aiAnalysisService } from '@/services/aiAnalysisService';
 
 export const useSessionManager = (state: ReturnType<typeof import('./useSessionState').useSessionState>) => {
   const selectIndustry = useCallback((industry: Category) => {
@@ -83,6 +85,10 @@ export const useSessionManager = (state: ReturnType<typeof import('./useSessionS
       if (state.isRecording) {
         stopRecording();
       }
+      
+      // Stop transcription and AI analysis services
+      transcriptionService.stop();
+      aiAnalysisService.stopAnalysis();
       
       toast.success("Session ended! View your feedback on the dashboard.");
     }
