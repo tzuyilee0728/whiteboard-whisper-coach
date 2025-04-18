@@ -64,11 +64,11 @@ const TranscriptionView = () => {
         <div className="flex items-center text-lg">
           <Mic className="h-5 w-5 mr-2" />
           Live Transcription
-          {isTranscribing && (
+          {isRecording && isTranscribing && (
             <span className="ml-2 h-2 w-2 rounded-full bg-red-500 animate-pulse"></span>
           )}
         </div>
-        {isTranscribing && (
+        {!isRecording && isTranscribing && (
           <div className="text-xs text-gray-500 flex items-center">
             <PauseCircle className="h-3 w-3 mr-1" />
             Pause recording to stop transcription
