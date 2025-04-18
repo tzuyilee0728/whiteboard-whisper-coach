@@ -1,4 +1,6 @@
+
 import { toast } from 'sonner';
+import { supabase } from '@/integrations/supabase/client';
 
 // Add TypeScript declarations for the Web Speech API
 interface SpeechRecognitionEvent extends Event {
