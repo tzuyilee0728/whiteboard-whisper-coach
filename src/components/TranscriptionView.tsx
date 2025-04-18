@@ -6,7 +6,7 @@ import { transcriptionService } from '@/services/transcriptionService';
 import { aiAnalysisService } from '@/services/aiAnalysisService';
 
 const TranscriptionView = () => {
-  const { isRecording, currentSession, currentSection } = useSession();
+  const { isRecording, currentSession, currentSection, isPaused } = useSession();
   const [transcription, setTranscription] = useState<string>('');
   const [isTranscribing, setIsTranscribing] = useState<boolean>(false);
   const [feedback, setFeedback] = useState<string[]>([]);
@@ -64,7 +64,7 @@ const TranscriptionView = () => {
         <div className="flex items-center text-lg">
           <Mic className="h-5 w-5 mr-2" />
           Live Transcription
-          {isRecording && isTranscribing && (
+          {isRecording && isTranscribing && !isPaused && (
             <span className="ml-2 h-2 w-2 rounded-full bg-red-500 animate-pulse"></span>
           )}
         </div>
@@ -77,7 +77,7 @@ const TranscriptionView = () => {
       </div>
       
       <div className="flex-grow overflow-auto" ref={transcriptionRef}>
-        {isRecording || transcription ? (
+        {(isRecording || transcription) && (
           <div className="space-y-4">
             <div className="border-b pb-2 mb-2">
               <p className="text-sm font-medium">Transcription:</p>
@@ -97,7 +97,9 @@ const TranscriptionView = () => {
               </div>
             )}
           </div>
-        ) : (
+        )}
+        
+        {!isRecording && !transcription && (
           <div className="h-full flex flex-col items-center justify-center text-center text-gray-500">
             <AlertTriangle className="h-10 w-10 mb-2 text-amber-500" />
             <p>Start recording to see live transcription</p>
