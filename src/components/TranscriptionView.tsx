@@ -2,6 +2,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Mic, AlertTriangle, PauseCircle } from 'lucide-react';
 import { useSession } from '@/context/SessionContext';
+import { transcriptionService } from '@/services/transcriptionService';
 import { supabase } from '@/integrations/supabase/client';
 
 const TranscriptionView = () => {
@@ -9,30 +10,76 @@ const TranscriptionView = () => {
   const [transcription, setTranscription] = useState<string>('');
   const [feedback, setFeedback] = useState<string[]>([]);
   const transcriptionRef = useRef<HTMLDivElement>(null);
+  const audioChunksRef = useRef<Blob[]>([]);
+  const processingRef = useRef<boolean>(false);
 
-  // Use Supabase edge function to handle transcription and AI analysis
-  const processAudioTranscription = async (audioBlob: Blob) => {
+  // Subscribe to transcription updates
+  useEffect(() => {
+    const handleTranscriptUpdate = (text: string) => {
+      setTranscription(text);
+    };
+
+    transcriptionService.onTranscriptUpdate(handleTranscriptUpdate);
+
+    return () => {
+      // This is a no-op but it's good practice
+      transcriptionService.onTranscriptUpdate(null);
+    };
+  }, []);
+
+  // Process audio for transcription using Supabase edge function
+  const processAudioChunk = async (audioBlob: Blob) => {
+    if (!audioBlob || audioBlob.size === 0 || processingRef.current || !currentSession) {
+      return;
+    }
+
+    processingRef.current = true;
+
     try {
+      const arrayBuffer = await audioBlob.arrayBuffer();
+      const base64Audio = btoa(String.fromCharCode(...new Uint8Array(arrayBuffer)));
+
       const { data, error } = await supabase.functions.invoke('transcribe-and-analyze', {
         body: JSON.stringify({
-          audio: await audioBlob.arrayBuffer(),
+          audio: base64Audio,
           section: currentSection
         })
       });
 
       if (error) throw error;
 
-      if (data.transcription) {
-        setTranscription(prev => prev + ' ' + data.transcription);
+      if (data.transcription && data.transcription.trim() !== '') {
+        setTranscription(prev => 
+          (prev + ' ' + data.transcription).trim()
+        );
       }
 
-      if (data.feedback) {
+      if (data.feedback && data.feedback.trim() !== '') {
         setFeedback(prev => [...prev, data.feedback]);
       }
     } catch (err) {
       console.error('Transcription error:', err);
+    } finally {
+      processingRef.current = false;
     }
   };
+
+  // Handle audio chunks from recording
+  useEffect(() => {
+    const handleAudioData = async (event: CustomEvent<Blob>) => {
+      if (event.detail && event.detail.size > 0) {
+        audioChunksRef.current.push(event.detail);
+        await processAudioChunk(event.detail);
+      }
+    };
+
+    // Listen for audio data events
+    window.addEventListener('audioData' as any, handleAudioData as any);
+
+    return () => {
+      window.removeEventListener('audioData' as any, handleAudioData as any);
+    };
+  }, [currentSection]);
 
   // Auto-scroll to bottom of transcription
   useEffect(() => {

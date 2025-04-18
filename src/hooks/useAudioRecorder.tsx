@@ -9,7 +9,7 @@ export const useAudioRecorder = () => {
   const [mediaRecorder, setMediaRecorder] = useState<MediaRecorder | null>(null);
   const [error, setError] = useState<string | null>(null);
   const audioChunksRef = useRef<Blob[]>([]);
-  const { isRecording, setIsRecording, currentSession, updateRecordingTime } = useSession();
+  const { isRecording, setIsRecording, currentSession, updateRecordingTime, isPaused } = useSession();
   
   // Request microphone access
   const requestMicrophonePermission = async () => {
@@ -34,8 +34,14 @@ export const useAudioRecorder = () => {
         if (e.data.size > 0) {
           audioChunksRef.current.push(e.data);
           
+          // Dispatch audio data as custom event for TranscriptionView to process
+          const audioDataEvent = new CustomEvent('audioData', { 
+            detail: e.data
+          });
+          window.dispatchEvent(audioDataEvent);
+          
           // Send the latest audio chunk to the transcription service
-          if (isRecording) {
+          if (isRecording && !isPaused) {
             transcriptionService.processAudioChunk(e.data);
           }
         }
@@ -47,7 +53,7 @@ export const useAudioRecorder = () => {
         recorder.ondataavailable = null;
       };
     }
-  }, [audioStream, isRecording]);
+  }, [audioStream, isRecording, isPaused]);
 
   // Start recording function
   const startRecording = async () => {

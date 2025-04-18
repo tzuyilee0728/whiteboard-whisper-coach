@@ -1,5 +1,5 @@
 
-import { useCallback } from 'react';
+import { useCallback, useRef } from 'react';
 import { Category, Challenge, AudioRecording, WhiteboardSection } from '@/types';
 import { generateSessionFeedback } from '@/context/sessionUtils';
 import { toast } from 'sonner';
@@ -7,6 +7,9 @@ import { transcriptionService } from '@/services/transcriptionService';
 import { aiAnalysisService } from '@/services/aiAnalysisService';
 
 export const useSessionManager = (state: ReturnType<typeof import('./useSessionState').useSessionState>) => {
+  // Add a ref to track if transcription service is initialized
+  const transcriptionInitialized = useRef(false);
+
   const selectIndustry = useCallback((industry: Category) => {
     state.setSelectedIndustry(industry);
     state.setCurrentChallenge(null);
@@ -66,6 +69,12 @@ export const useSessionManager = (state: ReturnType<typeof import('./useSessionS
     state.setIsPaused(false);
     state.setIsRecording(true);
     
+    // Start the transcription service
+    setTimeout(() => {
+      transcriptionService.start();
+      transcriptionInitialized.current = true;
+    }, 500);
+    
     toast.success("Session started!");
   }, [state, generateRandomChallenge]);
 
@@ -90,6 +99,7 @@ export const useSessionManager = (state: ReturnType<typeof import('./useSessionS
       
       // Stop transcription and AI analysis services
       transcriptionService.stop();
+      transcriptionInitialized.current = false;
       aiAnalysisService.stopAnalysis();
       
       toast.success("Session ended! View your feedback on the dashboard.");
@@ -98,11 +108,24 @@ export const useSessionManager = (state: ReturnType<typeof import('./useSessionS
 
   const startRecording = useCallback(() => {
     state.setIsRecording(true);
+    
+    // Start the transcription service if not already started
+    if (!transcriptionInitialized.current) {
+      transcriptionService.start();
+      transcriptionInitialized.current = true;
+    }
+    
     toast.success("Recording started");
   }, [state]);
 
   const stopRecording = useCallback(() => {
     state.setIsRecording(false);
+    
+    // Don't stop the transcription service here, just pause it
+    if (transcriptionInitialized.current) {
+      transcriptionService.stop();
+    }
+    
     toast.success("Recording stopped");
     
     if (state.currentSession) {
