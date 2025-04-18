@@ -7,15 +7,6 @@ import { Mic, MicOff, Clock } from 'lucide-react';
 import { useAudioRecorder } from '@/hooks/useAudioRecorder';
 import { toast } from 'sonner';
 
-// Extend Window interface to include our custom property
-declare global {
-  interface Window {
-    audioRecorder?: {
-      getAllAudioAsBlob: () => Blob | null;
-    };
-  }
-}
-
 const AudioRecorder = () => {
   const { 
     isRecording, 
