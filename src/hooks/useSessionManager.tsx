@@ -1,5 +1,5 @@
 
-import { useCallback } from 'react';
+import { useCallback, useEffect } from 'react';
 import { Category, Challenge, AudioRecording, WhiteboardSection } from '@/types';
 import { generateSessionFeedback } from '@/context/sessionUtils';
 import { toast } from 'sonner';
