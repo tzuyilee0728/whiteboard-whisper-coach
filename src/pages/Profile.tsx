@@ -1,15 +1,13 @@
+
 import React, { useEffect, useState } from 'react';
 import NavBar from '@/components/NavBar';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Input } from '@/components/ui/input';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Label } from '@/components/ui/label';
-import { Switch } from '@/components/ui/switch';
 import { toast } from 'sonner';
-import { Save, Bell, Volume2, User } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
+import AccountInformation from '@/components/profile/AccountInformation';
+import NotificationSettings from '@/components/profile/NotificationSettings';
+import AudioSettings from '@/components/profile/AudioSettings';
+import PrivacySettings from '@/components/profile/PrivacySettings';
 
 const Profile = () => {
   const { user } = useAuth();
@@ -34,9 +32,7 @@ const Profile = () => {
         .eq('id', user.id)
         .single();
 
-      if (error) {
-        throw error;
-      }
+      if (error) throw error;
 
       if (data) {
         setProfile({
@@ -87,158 +83,21 @@ const Profile = () => {
         </div>
         
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          <div className="md:col-span-2">
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center">
-                  <User className="mr-2 h-5 w-5" />
-                  Account Information
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-6">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="name">Full Name</Label>
-                    <Input 
-                      id="name" 
-                      placeholder="Your name" 
-                      value={profile.full_name}
-                      onChange={(e) => setProfile({ ...profile, full_name: e.target.value })}
-                    />
-                  </div>
-                  
-                  <div className="space-y-2">
-                    <Label htmlFor="email">Email Address</Label>
-                    <Input 
-                      id="email" 
-                      type="email" 
-                      placeholder="Your email"
-                      value={profile.email}
-                      onChange={(e) => setProfile({ ...profile, email: e.target.value })}
-                    />
-                  </div>
-                </div>
-                
-                <Button 
-                  onClick={handleSaveSettings} 
-                  disabled={loading}
-                  className="bg-brand-600 hover:bg-brand-700"
-                >
-                  <Save className="mr-2 h-4 w-4" />
-                  {loading ? 'Saving...' : 'Save Changes'}
-                </Button>
-              </CardContent>
-            </Card>
-            
-            <Card className="mt-6">
-              <CardHeader>
-                <CardTitle className="flex items-center">
-                  <Bell className="mr-2 h-5 w-5" />
-                  Notification Settings
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="font-medium">Session Reminders</p>
-                    <p className="text-sm text-gray-500">Receive reminders for scheduled practice sessions</p>
-                  </div>
-                  <Switch defaultChecked />
-                </div>
-                
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="font-medium">Section Time Alerts</p>
-                    <p className="text-sm text-gray-500">Get notified when section time is running low</p>
-                  </div>
-                  <Switch defaultChecked />
-                </div>
-                
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="font-medium">Feedback Notifications</p>
-                    <p className="text-sm text-gray-500">Receive notifications when session feedback is ready</p>
-                  </div>
-                  <Switch defaultChecked />
-                </div>
-                
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="font-medium">Email Digests</p>
-                    <p className="text-sm text-gray-500">Weekly summaries of your practice progress</p>
-                  </div>
-                  <Switch />
-                </div>
-              </CardContent>
-            </Card>
+          <div className="md:col-span-2 space-y-6">
+            <AccountInformation 
+              profile={profile}
+              loading={loading}
+              onProfileUpdate={(newProfile) => {
+                setProfile(newProfile);
+                handleSaveSettings();
+              }}
+            />
+            <NotificationSettings />
           </div>
           
           <div className="space-y-6">
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center">
-                  <Volume2 className="mr-2 h-5 w-5" />
-                  Audio Settings
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="font-medium">Audio Transcription</p>
-                    <p className="text-sm text-gray-500">Convert speech to text during sessions</p>
-                  </div>
-                  <Switch defaultChecked />
-                </div>
-                
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="font-medium">Auto-Save Recordings</p>
-                    <p className="text-sm text-gray-500">Save audio recordings after sessions</p>
-                  </div>
-                  <Switch defaultChecked />
-                </div>
-                
-                <div className="space-y-2">
-                  <Label>Audio Quality</Label>
-                  <Select defaultValue="high">
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select quality" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="standard">Standard</SelectItem>
-                      <SelectItem value="high">High</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-              </CardContent>
-            </Card>
-            
-            <Card>
-              <CardHeader>
-                <CardTitle>Privacy Settings</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="font-medium">Data Collection</p>
-                    <p className="text-sm text-gray-500">Help improve AI by allowing data collection</p>
-                  </div>
-                  <Switch defaultChecked />
-                </div>
-                
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="font-medium">Session History</p>
-                    <p className="text-sm text-gray-500">Store your practice session history</p>
-                  </div>
-                  <Switch defaultChecked />
-                </div>
-                
-                <Button variant="outline" className="w-full">
-                  Delete Account
-                </Button>
-              </CardContent>
-            </Card>
+            <AudioSettings />
+            <PrivacySettings />
           </div>
         </div>
       </div>
