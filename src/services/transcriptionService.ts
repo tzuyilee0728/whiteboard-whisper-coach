@@ -1,4 +1,3 @@
-
 import { toast } from 'sonner';
 
 // Add TypeScript declarations for the Web Speech API
@@ -116,12 +115,11 @@ export class TranscriptionService {
   // Process audio chunk with external API
   public async processAudioChunk(audioChunk: Blob) {
     if (!this.isUsingAPI || !this.apiConfig) {
-      return; // Skip if not using API or API not configured
+      return;
     }
 
     this.audioQueue.push(audioChunk);
     
-    // Process the audio queue if not already processing
     if (!this.isProcessingAudio) {
       this.processAudioQueue();
     }
@@ -142,55 +140,34 @@ export class TranscriptionService {
         return;
       }
 
-      // Convert blob to base64 for API transmission
       const arrayBuffer = await audioChunk.arrayBuffer();
       const base64Audio = this.arrayBufferToBase64(arrayBuffer);
       
-      // Create FormData or JSON payload based on the API requirements
-      const payload = JSON.stringify({
-        audio: base64Audio,
-        language: this.apiConfig.language,
-        // Add other parameters as required by your API
+      // Send to Supabase Edge Function
+      const { data, error } = await supabase.functions.invoke('transcribe-and-analyze', {
+        body: {
+          audio: base64Audio,
+          language: this.apiConfig.language,
+        }
       });
 
-      // Make API request
-      const response = await fetch(this.apiConfig.apiUrl, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${this.apiConfig.apiKey}`,
-        },
-        body: payload
-      });
+      if (error) throw error;
 
-      if (!response.ok) {
-        throw new Error(`API error: ${response.status}`);
-      }
-
-      const data = await response.json();
-      
-      // Update transcript with API response
-      if (data.text || data.transcript) {
-        const transcriptText = data.text || data.transcript;
+      if (data.transcription) {
+        this.finalTranscript += ' ' + data.transcription;
         
-        // Append to final transcript
-        this.finalTranscript += ' ' + transcriptText;
-        
-        // Update UI
         if (this.onTranscriptUpdateCallback) {
           this.onTranscriptUpdateCallback(this.finalTranscript);
         }
       }
     } catch (error) {
       console.error('Error processing audio for transcription:', error);
-      // Only show one toast error to avoid spamming
       if (this.audioQueue.length === 0) {
-        toast.error('Error connecting to transcription API');
+        toast.error('Error processing audio');
       }
     } finally {
       this.isProcessingAudio = false;
       
-      // Process next chunk if available
       if (this.audioQueue.length > 0) {
         setTimeout(() => this.processAudioQueue(), 100);
       }

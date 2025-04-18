@@ -1,8 +1,10 @@
 
 import React, { useState, useEffect, useRef } from 'react';
-import { Mic, AlertTriangle, PauseCircle } from 'lucide-react';
+import { Mic, AlertTriangle } from 'lucide-react';
 import { useSession } from '@/context/SessionContext';
-import { supabase } from '@/integrations/supabase/client';
+import { ScrollArea } from '@/components/ui/scroll-area';
+import { transcriptionService } from '@/services/transcriptionService';
+import { aiAnalysisService } from '@/services/aiAnalysisService';
 
 const TranscriptionView = () => {
   const { isRecording, currentSession, currentSection, isPaused } = useSession();
@@ -10,29 +12,28 @@ const TranscriptionView = () => {
   const [feedback, setFeedback] = useState<string[]>([]);
   const transcriptionRef = useRef<HTMLDivElement>(null);
 
-  // Use Supabase edge function to handle transcription and AI analysis
-  const processAudioTranscription = async (audioBlob: Blob) => {
-    try {
-      const { data, error } = await supabase.functions.invoke('transcribe-and-analyze', {
-        body: JSON.stringify({
-          audio: await audioBlob.arrayBuffer(),
-          section: currentSection
-        })
+  useEffect(() => {
+    if (currentSession && isRecording && !isPaused) {
+      // Subscribe to transcription updates
+      transcriptionService.onTranscriptUpdate((newTranscript) => {
+        setTranscription(prev => prev + ' ' + newTranscript);
       });
 
-      if (error) throw error;
+      // Subscribe to AI feedback updates
+      aiAnalysisService.onFeedback((newFeedback) => {
+        setFeedback(prev => [...prev, newFeedback]);
+      });
 
-      if (data.transcription) {
-        setTranscription(prev => prev + ' ' + data.transcription);
-      }
-
-      if (data.feedback) {
-        setFeedback(prev => [...prev, data.feedback]);
-      }
-    } catch (err) {
-      console.error('Transcription error:', err);
+      // Start the AI analysis for the current section
+      aiAnalysisService.startAnalysis(currentSection);
+    } else {
+      aiAnalysisService.stopAnalysis();
     }
-  };
+
+    return () => {
+      aiAnalysisService.stopAnalysis();
+    };
+  }, [currentSession, isRecording, isPaused, currentSection]);
 
   // Auto-scroll to bottom of transcription
   useEffect(() => {
@@ -53,37 +54,37 @@ const TranscriptionView = () => {
         </div>
       </div>
       
-      <div className="flex-grow overflow-auto" ref={transcriptionRef}>
-        {(isRecording || transcription || feedback.length > 0) && (
-          <div className="space-y-4">
-            <div className="border-b pb-2 mb-2">
-              <p className="text-sm font-medium">Transcription:</p>
-              <p className="text-sm whitespace-pre-wrap">{transcription}</p>
-            </div>
-            
-            {feedback.length > 0 && (
-              <div>
-                <p className="text-sm font-medium">AI Feedback:</p>
-                <div className="space-y-2 mt-2">
-                  {feedback.map((item, idx) => (
-                    <div key={idx} className="bg-blue-50 p-2 rounded text-sm">
-                      {item}
-                    </div>
-                  ))}
-                </div>
+      <ScrollArea className="flex-grow">
+        <div className="space-y-4" ref={transcriptionRef}>
+          {(isRecording || transcription || feedback.length > 0) ? (
+            <div className="space-y-4">
+              <div className="border-b pb-2 mb-2">
+                <p className="text-sm font-medium">Transcription:</p>
+                <p className="text-sm whitespace-pre-wrap">{transcription}</p>
               </div>
-            )}
-          </div>
-        )}
-        
-        {!isRecording && !transcription && !feedback.length && (
-          <div className="h-full flex flex-col items-center justify-center text-center text-gray-500">
-            <AlertTriangle className="h-10 w-10 mb-2 text-amber-500" />
-            <p>Start recording to see live transcription</p>
-            <p className="text-xs mt-2">Transcription will appear here when you begin speaking</p>
-          </div>
-        )}
-      </div>
+              
+              {feedback.length > 0 && (
+                <div>
+                  <p className="text-sm font-medium">AI Feedback:</p>
+                  <div className="space-y-2 mt-2">
+                    {feedback.map((item, idx) => (
+                      <div key={idx} className="bg-blue-50 p-2 rounded text-sm">
+                        {item}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+          ) : (
+            <div className="h-full flex flex-col items-center justify-center text-center text-gray-500">
+              <AlertTriangle className="h-10 w-10 mb-2 text-amber-500" />
+              <p>Start recording to see live transcription</p>
+              <p className="text-xs mt-2">Transcription will appear here when you begin speaking</p>
+            </div>
+          )}
+        </div>
+      </ScrollArea>
     </div>
   );
 };

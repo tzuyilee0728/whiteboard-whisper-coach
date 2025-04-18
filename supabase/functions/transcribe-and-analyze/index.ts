@@ -1,3 +1,4 @@
+
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import OpenAI from "https://esm.sh/openai@4.24.4";
 import Replicate from "https://esm.sh/replicate@0.25.2";
@@ -33,7 +34,7 @@ serve(async (req) => {
 
     const transcription = transcriptionResponse.text;
 
-    // Updated Perplexity prompt with more specific guidance
+    // Perplexity Analysis
     const perplexityResponse = await fetch('https://api.perplexity.ai/chat/completions', {
       method: 'POST',
       headers: {
