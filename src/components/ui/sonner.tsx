@@ -1,3 +1,4 @@
+
 import { useTheme } from "next-themes"
 import { Toaster as Sonner } from "sonner"
 
@@ -8,6 +9,7 @@ const Toaster = ({ ...props }: ToasterProps) => {
 
   return (
     <Sonner
+      position="bottom-left"  // Change position to bottom-left
       theme={theme as ToasterProps["theme"]}
       className="toaster group"
       toastOptions={{
