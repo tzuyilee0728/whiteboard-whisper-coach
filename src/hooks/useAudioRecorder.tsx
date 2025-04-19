@@ -11,14 +11,17 @@ export const useAudioRecorder = () => {
   const audioChunksRef = useRef<Blob[]>([]);
   const { isRecording, setIsRecording, currentSession, updateRecordingTime } = useSession();
   
-  // Request microphone access
+  // Request microphone permission
   const requestMicrophonePermission = async () => {
     try {
+      console.log('Requesting microphone permission...');
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      console.log('Microphone permission granted');
       setAudioStream(stream);
       setError(null);
       return stream;
     } catch (err) {
+      console.error('Microphone permission error:', err);
       setError('Microphone permission denied. Please allow microphone access.');
       toast.error('Microphone permission denied. Please allow microphone access.');
       return null;
@@ -28,10 +31,12 @@ export const useAudioRecorder = () => {
   // Initialize media recorder when audio stream is available
   useEffect(() => {
     if (audioStream) {
+      console.log('Audio stream available, initializing MediaRecorder');
       const recorder = new MediaRecorder(audioStream);
       
       recorder.ondataavailable = async (e) => {
         if (e.data.size > 0) {
+          console.log(`Audio data available: ${e.data.size} bytes`);
           audioChunksRef.current.push(e.data);
           
           // Send the latest audio chunk to the transcription service
@@ -51,6 +56,8 @@ export const useAudioRecorder = () => {
 
   // Start recording function
   const startRecording = async () => {
+    console.log('Starting recording, audioStream exists:', !!audioStream);
+    
     if (!audioStream) {
       const stream = await requestMicrophonePermission();
       if (!stream) return;
@@ -59,15 +66,19 @@ export const useAudioRecorder = () => {
     if (mediaRecorder && mediaRecorder.state !== 'recording') {
       audioChunksRef.current = [];
       // Initialize the transcription service
+      console.log('Initializing transcription service');
       transcriptionService.start();
       // Start recording in smaller chunks for real-time processing
-      mediaRecorder.start(1000);
+      mediaRecorder.start(1000); // Get data every second
+      console.log('MediaRecorder started');
       setIsRecording(true);
     }
   };
 
   // Stop recording function
   const stopRecording = () => {
+    console.log('Stopping recording, mediaRecorder state:', mediaRecorder?.state);
+    
     if (mediaRecorder && mediaRecorder.state === 'recording') {
       mediaRecorder.stop();
       transcriptionService.stop();

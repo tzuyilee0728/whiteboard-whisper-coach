@@ -10,11 +10,14 @@ export class TranscriptionService {
     if (!('SpeechRecognition' in window || 'webkitSpeechRecognition' in window)) {
       this.isUsingAPI = true;
       console.log('Speech Recognition API not supported in this browser, will use external API');
+    } else {
+      console.log('Using browser Speech Recognition API');
     }
   }
 
   public async processAudioChunk(audioChunk: Blob) {
     if (this.isUsingAPI) {
+      console.log('Processing audio chunk via external API');
       return await audioProcessingService.processAudioChunk(audioChunk);
     }
     return '';
@@ -25,6 +28,7 @@ export class TranscriptionService {
       console.log('Using API transcription service');
       return true; // We're ready to process audio chunks
     }
+    console.log('Starting browser speech recognition service');
     return browserSpeechService.start();
   }
 
@@ -37,6 +41,7 @@ export class TranscriptionService {
 
   public reset() {
     if (this.isUsingAPI) {
+      audioProcessingService.resetTranscript();
       return;
     }
     browserSpeechService.reset();

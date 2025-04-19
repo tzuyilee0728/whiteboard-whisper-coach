@@ -10,6 +10,7 @@ export class AudioProcessingService {
 
   public async processAudioChunk(audioChunk: Blob) {
     try {
+      console.log('Processing audio chunk, size:', audioChunk.size);
       const arrayBuffer = await audioChunk.arrayBuffer();
       const base64Audio = this.arrayBufferToBase64(arrayBuffer);
       
@@ -17,11 +18,17 @@ export class AudioProcessingService {
         body: { audio: base64Audio }
       });
 
-      if (error) throw error;
+      if (error) {
+        console.error('Supabase function error:', error);
+        throw error;
+      }
 
       const transcription = data?.transcription || '';
+      console.log('Received transcription:', transcription);
+      
       if (transcription && transcription.trim() !== '') {
         this.currentTranscript += ' ' + transcription;
+        this.currentTranscript = this.currentTranscript.trim();
         
         // Call the callback if it exists
         if (this.transcriptCallback) {
@@ -39,10 +46,15 @@ export class AudioProcessingService {
 
   public setTranscriptCallback(callback: (transcript: string) => void) {
     this.transcriptCallback = callback;
+    console.log('Transcript callback set in audioProcessingService');
   }
 
   public getCurrentTranscript(): string {
     return this.currentTranscript;
+  }
+
+  public resetTranscript(): void {
+    this.currentTranscript = '';
   }
 
   private arrayBufferToBase64(buffer: ArrayBuffer): string {

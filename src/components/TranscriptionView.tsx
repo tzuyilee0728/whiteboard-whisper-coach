@@ -17,25 +17,39 @@ const TranscriptionView = () => {
     if (currentSession) {
       setTranscription('');
       setFeedback([]);
+      
+      // Reset transcription service
+      transcriptionService.reset();
     }
   }, [currentSession]);
 
   useEffect(() => {
-    if (currentSession && isRecording && !isPaused) {
+    console.log('TranscriptionView effect - isRecording:', isRecording, 'isPaused:', isPaused);
+    
+    if (currentSession) {
+      // Always initialize to get current transcript
+      const currentText = transcriptionService.getCurrentTranscript();
+      if (currentText) {
+        setTranscription(currentText);
+      }
+      
       // Subscribe to transcription updates
       transcriptionService.onTranscriptUpdate((newTranscript) => {
+        console.log('Transcript update received:', newTranscript);
         setTranscription(newTranscript);
       });
 
-      // Subscribe to AI feedback updates if needed
-      aiAnalysisService.onFeedback((newFeedback) => {
-        setFeedback(prev => [...prev, newFeedback]);
-      });
+      if (isRecording && !isPaused) {
+        // Subscribe to AI feedback updates if needed
+        aiAnalysisService.onFeedback((newFeedback) => {
+          setFeedback(prev => [...prev, newFeedback]);
+        });
 
-      // Start the AI analysis for the current section
-      aiAnalysisService.startAnalysis(currentSection);
-    } else {
-      aiAnalysisService.stopAnalysis();
+        // Start the AI analysis for the current section
+        aiAnalysisService.startAnalysis(currentSection);
+      } else {
+        aiAnalysisService.stopAnalysis();
+      }
     }
 
     return () => {
@@ -68,7 +82,7 @@ const TranscriptionView = () => {
             <div className="space-y-4">
               <div className="border-b pb-2 mb-2">
                 <p className="text-sm font-medium">Transcription:</p>
-                <p className="text-sm whitespace-pre-wrap">{transcription}</p>
+                <p className="text-sm whitespace-pre-wrap">{transcription || "Waiting for speech..."}</p>
               </div>
               
               {feedback.length > 0 && (
