@@ -54,7 +54,10 @@ const AudioRecorder = () => {
     console.log('AudioRecorder effect - currentSession:', !!currentSession, 'isRecording:', isRecording, 'isPaused:', isPaused);
     if (currentSession && !isRecording && !isPaused) {
       console.log('Auto-starting recording');
-      startRecording();
+      // Small delay to ensure everything is initialized
+      setTimeout(() => {
+        startRecording();
+      }, 500);
     }
   }, [currentSession, isRecording, isPaused]);
   

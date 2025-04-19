@@ -7,12 +7,28 @@ export class AudioProcessingService {
   private isProcessingAudio: boolean = false;
   private currentTranscript: string = '';
   private transcriptCallback: ((transcript: string) => void) | null = null;
+  private debugMode: boolean = true;
+
+  private log(...args: any[]) {
+    if (this.debugMode) {
+      console.log('[AudioProcessingService]', ...args);
+    }
+  }
 
   public async processAudioChunk(audioChunk: Blob) {
     try {
-      console.log('Processing audio chunk, size:', audioChunk.size);
+      this.log('Processing audio chunk, size:', audioChunk.size, 'bytes');
+      
+      // Ignore tiny audio chunks (probably silence)
+      if (audioChunk.size < 100) {
+        this.log('Audio chunk too small, likely silence - skipping');
+        return '';
+      }
+      
       const arrayBuffer = await audioChunk.arrayBuffer();
       const base64Audio = this.arrayBufferToBase64(arrayBuffer);
+      
+      this.log('Sending audio to server for transcription, base64 length:', base64Audio.length);
       
       const { data, error } = await supabase.functions.invoke('transcribe-and-analyze', {
         body: { audio: base64Audio }
@@ -24,7 +40,7 @@ export class AudioProcessingService {
       }
 
       const transcription = data?.transcription || '';
-      console.log('Received transcription:', transcription);
+      this.log('Received transcription:', transcription);
       
       if (transcription && transcription.trim() !== '') {
         this.currentTranscript += ' ' + transcription;
@@ -32,8 +48,11 @@ export class AudioProcessingService {
         
         // Call the callback if it exists
         if (this.transcriptCallback) {
+          this.log('Calling transcript callback with updated text');
           this.transcriptCallback(this.currentTranscript);
         }
+      } else {
+        this.log('No transcription received from server');
       }
       
       return transcription;
@@ -46,7 +65,7 @@ export class AudioProcessingService {
 
   public setTranscriptCallback(callback: (transcript: string) => void) {
     this.transcriptCallback = callback;
-    console.log('Transcript callback set in audioProcessingService');
+    this.log('Transcript callback set');
   }
 
   public getCurrentTranscript(): string {
@@ -54,6 +73,7 @@ export class AudioProcessingService {
   }
 
   public resetTranscript(): void {
+    this.log('Resetting transcript');
     this.currentTranscript = '';
   }
 

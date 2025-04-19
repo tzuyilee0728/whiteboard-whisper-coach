@@ -4,35 +4,53 @@ import { audioProcessingService } from './audioProcessingService';
 
 export class TranscriptionService {
   private isUsingAPI: boolean = false;
+  private isInitialized: boolean = false;
+  private debugMode: boolean = true; // Enable debug mode to log more details
 
   constructor() {
     // If browser speech recognition isn't available, use API fallback
     if (!('SpeechRecognition' in window || 'webkitSpeechRecognition' in window)) {
       this.isUsingAPI = true;
-      console.log('Speech Recognition API not supported in this browser, will use external API');
+      this.log('Speech Recognition API not supported in this browser, will use external API');
     } else {
-      console.log('Using browser Speech Recognition API');
+      this.log('Using browser Speech Recognition API');
+    }
+  }
+
+  private log(...args: any[]) {
+    if (this.debugMode) {
+      console.log('[TranscriptionService]', ...args);
     }
   }
 
   public async processAudioChunk(audioChunk: Blob) {
+    this.log('Processing audio chunk, size:', audioChunk.size, 'bytes');
+    
     if (this.isUsingAPI) {
-      console.log('Processing audio chunk via external API');
+      this.log('Sending to API for processing');
       return await audioProcessingService.processAudioChunk(audioChunk);
     }
+    
+    // In browser mode, chunks are handled internally by the speech recognition API
+    this.log('In browser mode - chunks processed by speech recognition API');
     return '';
   }
 
   public start() {
+    this.isInitialized = true;
+    
     if (this.isUsingAPI) {
-      console.log('Using API transcription service');
+      this.log('Using API transcription service');
       return true; // We're ready to process audio chunks
     }
-    console.log('Starting browser speech recognition service');
+    
+    this.log('Starting browser speech recognition service');
     return browserSpeechService.start();
   }
 
   public stop() {
+    this.log('Stopping transcription service');
+    
     if (this.isUsingAPI) {
       return true;
     }
@@ -40,14 +58,18 @@ export class TranscriptionService {
   }
 
   public reset() {
+    this.log('Resetting transcription service');
+    
     if (this.isUsingAPI) {
       audioProcessingService.resetTranscript();
-      return;
+    } else {
+      browserSpeechService.reset();
     }
-    browserSpeechService.reset();
   }
 
   public onTranscriptUpdate(callback: (transcript: string) => void) {
+    this.log('Setting transcript update callback');
+    
     if (this.isUsingAPI) {
       // For API mode, the callback will be called when we process chunks
       audioProcessingService.setTranscriptCallback(callback);
@@ -57,10 +79,18 @@ export class TranscriptionService {
   }
 
   public getCurrentTranscript(): string {
+    if (!this.isInitialized) {
+      return '';
+    }
+    
     if (this.isUsingAPI) {
       return audioProcessingService.getCurrentTranscript();
     }
     return browserSpeechService.getCurrentTranscript();
+  }
+
+  public isReady(): boolean {
+    return this.isInitialized;
   }
 }
 

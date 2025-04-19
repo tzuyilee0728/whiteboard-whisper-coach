@@ -10,6 +10,7 @@ const TranscriptionView = () => {
   const { isRecording, currentSession, currentSection, isPaused } = useSession();
   const [transcription, setTranscription] = useState<string>('');
   const [feedback, setFeedback] = useState<string[]>([]);
+  const [transcriptionStatus, setTranscriptionStatus] = useState<'idle' | 'waiting' | 'transcribing'>('idle');
   const transcriptionRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -37,9 +38,16 @@ const TranscriptionView = () => {
       transcriptionService.onTranscriptUpdate((newTranscript) => {
         console.log('Transcript update received:', newTranscript);
         setTranscription(newTranscript);
+        
+        if (newTranscript && newTranscript.trim() !== '') {
+          setTranscriptionStatus('transcribing');
+        }
       });
 
       if (isRecording && !isPaused) {
+        // Set status to waiting when recording starts
+        setTranscriptionStatus('waiting');
+        
         // Subscribe to AI feedback updates if needed
         aiAnalysisService.onFeedback((newFeedback) => {
           setFeedback(prev => [...prev, newFeedback]);
@@ -50,6 +58,9 @@ const TranscriptionView = () => {
       } else {
         aiAnalysisService.stopAnalysis();
       }
+    } else {
+      // Reset status when no session
+      setTranscriptionStatus('idle');
     }
 
     return () => {
@@ -63,6 +74,16 @@ const TranscriptionView = () => {
       transcriptionRef.current.scrollTop = transcriptionRef.current.scrollHeight;
     }
   }, [transcription, feedback]);
+
+  const getTranscriptionStatusText = () => {
+    if (transcriptionStatus === 'waiting') {
+      return "Waiting for speech...";
+    } else if (transcriptionStatus === 'transcribing') {
+      return transcription;
+    } else {
+      return "Transcription will appear here when you begin speaking";
+    }
+  };
 
   return (
     <div className="h-full flex flex-col bg-white rounded-lg border shadow-sm p-4">
@@ -82,7 +103,9 @@ const TranscriptionView = () => {
             <div className="space-y-4">
               <div className="border-b pb-2 mb-2">
                 <p className="text-sm font-medium">Transcription:</p>
-                <p className="text-sm whitespace-pre-wrap">{transcription || "Waiting for speech..."}</p>
+                <p className="text-sm whitespace-pre-wrap">
+                  {transcription || (transcriptionStatus === 'waiting' ? "Waiting for speech..." : "Speak to see transcription")}
+                </p>
               </div>
               
               {feedback.length > 0 && (
