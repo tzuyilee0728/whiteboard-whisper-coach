@@ -34,14 +34,12 @@ const AudioRecorder = () => {
     console.log('Toggle recording - current state:', isRecording);
     if (isRecording) {
       stopRecording();
-      toast.info("Recording paused");
       // If session isn't already paused, pause it
       if (!isPaused) {
         handlePauseResumeSession();
       }
     } else {
       startRecording();
-      toast.success("Recording started");
       // If session is paused, resume it
       if (isPaused) {
         handlePauseResumeSession();
@@ -57,7 +55,7 @@ const AudioRecorder = () => {
       // Small delay to ensure everything is initialized
       setTimeout(() => {
         startRecording();
-      }, 500);
+      }, 1000);
     }
   }, [currentSession, isRecording, isPaused]);
   

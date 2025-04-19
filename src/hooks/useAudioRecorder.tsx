@@ -11,6 +11,7 @@ export const useAudioRecorder = () => {
   const [isProcessing, setIsProcessing] = useState(false);
   const audioChunksRef = useRef<Blob[]>([]);
   const { isRecording, setIsRecording, currentSession, updateRecordingTime } = useSession();
+  const hasInitializedRef = useRef(false);
   
   // Request microphone permission
   const requestMicrophonePermission = async () => {
@@ -28,6 +29,14 @@ export const useAudioRecorder = () => {
       return null;
     }
   };
+
+  // Initialize microphone as early as possible
+  useEffect(() => {
+    if (!hasInitializedRef.current) {
+      requestMicrophonePermission();
+      hasInitializedRef.current = true;
+    }
+  }, []);
 
   // Initialize media recorder when audio stream is available
   useEffect(() => {
@@ -75,17 +84,29 @@ export const useAudioRecorder = () => {
     
     if (mediaRecorder && mediaRecorder.state !== 'recording') {
       audioChunksRef.current = [];
+      
       // Initialize the transcription service
       console.log('Initializing transcription service');
       const initialized = transcriptionService.start();
       console.log('Transcription service initialized:', initialized);
       
       // Start recording in smaller chunks for real-time processing
-      mediaRecorder.start(500); // Get data every 500ms for more frequent updates
+      mediaRecorder.start(1000); // Get data every second for more frequent updates
       console.log('MediaRecorder started');
       setIsRecording(true);
+      
+      // Show success toast
+      toast.success('Recording started');
     } else {
       console.warn('Cannot start recording - recorder not initialized or already recording');
+      
+      // If recorder is not initialized, try to initialize it
+      if (!mediaRecorder) {
+        const stream = await requestMicrophonePermission();
+        if (stream) {
+          toast.info('Please try recording again');
+        }
+      }
     }
   };
 
@@ -97,6 +118,7 @@ export const useAudioRecorder = () => {
       mediaRecorder.stop();
       transcriptionService.stop();
       setIsRecording(false);
+      toast.info('Recording stopped');
       return new Blob(audioChunksRef.current, { type: 'audio/webm' });
     }
     return null;

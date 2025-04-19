@@ -26,6 +26,12 @@ export class TranscriptionService {
   public async processAudioChunk(audioChunk: Blob) {
     this.log('Processing audio chunk, size:', audioChunk.size, 'bytes');
     
+    // Ignore very small audio chunks (likely silence)
+    if (audioChunk.size < 500) {
+      this.log('Audio chunk too small, likely silence - skipping');
+      return '';
+    }
+    
     if (this.isUsingAPI) {
       this.log('Sending to API for processing');
       return await audioProcessingService.processAudioChunk(audioChunk);
@@ -37,6 +43,7 @@ export class TranscriptionService {
   }
 
   public start() {
+    this.log('Starting transcription service');
     this.isInitialized = true;
     
     if (this.isUsingAPI) {
@@ -73,9 +80,9 @@ export class TranscriptionService {
     if (this.isUsingAPI) {
       // For API mode, the callback will be called when we process chunks
       audioProcessingService.setTranscriptCallback(callback);
-      return;
+    } else {
+      browserSpeechService.onTranscriptUpdate(callback);
     }
-    browserSpeechService.onTranscriptUpdate(callback);
   }
 
   public getCurrentTranscript(): string {
@@ -83,10 +90,15 @@ export class TranscriptionService {
       return '';
     }
     
+    let transcript = '';
     if (this.isUsingAPI) {
-      return audioProcessingService.getCurrentTranscript();
+      transcript = audioProcessingService.getCurrentTranscript();
+    } else {
+      transcript = browserSpeechService.getCurrentTranscript();
     }
-    return browserSpeechService.getCurrentTranscript();
+    
+    this.log('Current transcript:', transcript);
+    return transcript;
   }
 
   public isReady(): boolean {

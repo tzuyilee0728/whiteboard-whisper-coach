@@ -28,10 +28,17 @@ const TranscriptionView = () => {
     console.log('TranscriptionView effect - isRecording:', isRecording, 'isPaused:', isPaused);
     
     if (currentSession) {
+      // Set status to waiting when recording starts
+      if (isRecording && !isPaused) {
+        setTranscriptionStatus('waiting');
+      }
+      
       // Always initialize to get current transcript
       const currentText = transcriptionService.getCurrentTranscript();
+      console.log('Current transcript:', currentText);
       if (currentText) {
         setTranscription(currentText);
+        setTranscriptionStatus('transcribing');
       }
       
       // Subscribe to transcription updates
@@ -45,9 +52,6 @@ const TranscriptionView = () => {
       });
 
       if (isRecording && !isPaused) {
-        // Set status to waiting when recording starts
-        setTranscriptionStatus('waiting');
-        
         // Subscribe to AI feedback updates if needed
         aiAnalysisService.onFeedback((newFeedback) => {
           setFeedback(prev => [...prev, newFeedback]);
@@ -74,16 +78,6 @@ const TranscriptionView = () => {
       transcriptionRef.current.scrollTop = transcriptionRef.current.scrollHeight;
     }
   }, [transcription, feedback]);
-
-  const getTranscriptionStatusText = () => {
-    if (transcriptionStatus === 'waiting') {
-      return "Waiting for speech...";
-    } else if (transcriptionStatus === 'transcribing') {
-      return transcription;
-    } else {
-      return "Transcription will appear here when you begin speaking";
-    }
-  };
 
   return (
     <div className="h-full flex flex-col bg-white rounded-lg border shadow-sm p-4">
