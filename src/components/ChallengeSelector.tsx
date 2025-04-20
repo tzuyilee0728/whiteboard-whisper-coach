@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { useSession } from '@/context/SessionContext';
 import { 
@@ -25,6 +24,7 @@ const IndustrySelector = () => {
   
   const handleSelectIndustry = (value: string) => {
     if (value === 'random') {
+      // Just set it as random, actual industry will be selected when session starts
       selectIndustry('random' as Category);
     } else {
       selectIndustry(value as Category);
@@ -50,7 +50,6 @@ const IndustrySelector = () => {
       </label>
       <Select 
         onValueChange={handleSelectIndustry} 
-        defaultValue="random"
         value={selectedIndustry || 'random'}
       >
         <SelectTrigger className="w-full">
@@ -76,4 +75,3 @@ const IndustrySelector = () => {
 };
 
 export default IndustrySelector;
-

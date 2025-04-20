@@ -31,7 +31,6 @@ const AudioRecorder = () => {
   
   // Combined handler to pause/resume both session and recording
   const handleRecordingToggle = () => {
-    console.log('Toggle recording - current state:', isRecording);
     if (isRecording) {
       stopRecording();
       // If session isn't already paused, pause it
@@ -46,18 +45,6 @@ const AudioRecorder = () => {
       }
     }
   };
-  
-  // Auto-start recording when session starts
-  useEffect(() => {
-    console.log('AudioRecorder effect - currentSession:', !!currentSession, 'isRecording:', isRecording, 'isPaused:', isPaused);
-    if (currentSession && !isRecording && !isPaused) {
-      console.log('Auto-starting recording');
-      // Small delay to ensure everything is initialized
-      setTimeout(() => {
-        startRecording();
-      }, 1000);
-    }
-  }, [currentSession, isRecording, isPaused]);
   
   // Show error if microphone access is denied
   useEffect(() => {

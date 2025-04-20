@@ -1,5 +1,5 @@
 
-import { useCallback, useEffect } from 'react';
+import { useCallback } from 'react';
 import { Category, Challenge, AudioRecording, WhiteboardSection } from '@/types';
 import { generateSessionFeedback } from '@/context/sessionUtils';
 import { toast } from 'sonner';
@@ -38,12 +38,10 @@ export const useSessionManager = (state: ReturnType<typeof import('./useSessionS
     
     let industryForChallenge = state.selectedIndustry;
     
-    // Handle random industry selection
     if (state.selectedIndustry === 'random') {
       const availableIndustries: Category[] = ['e-commerce', 'healthcare', 'finance', 'social', 'productivity'];
       const randomIndex = Math.floor(Math.random() * availableIndustries.length);
       industryForChallenge = availableIndustries[randomIndex];
-      toast.success(`Selected ${industryForChallenge} industry randomly`);
     }
     
     const randomChallenge = generateRandomChallenge(industryForChallenge);

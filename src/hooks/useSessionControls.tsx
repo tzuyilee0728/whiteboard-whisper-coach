@@ -1,3 +1,4 @@
+
 import { useState, useEffect, useCallback } from 'react';
 import { useSession } from '@/context/SessionContext';
 import { useNavigate } from 'react-router-dom';
@@ -123,13 +124,11 @@ export function useSessionControls() {
       
       setTimeout(() => {
         startSession();
-        startRecording(); // Automatically start recording when session starts
         setTotalTime(customSessionTime * 60);  // Initialize with custom time in seconds
         setSectionTime(0);  // Explicitly reset section time
       }, 100);
     } else {
       startSession();
-      startRecording(); // Automatically start recording when session starts
       setTotalTime(customSessionTime * 60);  // Initialize with custom time in seconds
       setSectionTime(0);  // Explicitly reset section time
     }

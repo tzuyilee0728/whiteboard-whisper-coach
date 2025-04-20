@@ -1,4 +1,5 @@
-import React, { useState, useEffect } from 'react';
+
+import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import IndustrySelector from '@/components/ChallengeSelector';
@@ -9,23 +10,16 @@ import { WhiteboardSection } from '@/types';
 import { sectionTimings } from '@/services/mockData';
 import { toast } from 'sonner';
 import { Slider } from '@/components/ui/slider';
-import { showMicrophonePermissionPrompt } from '@/utils/permissionPrompt';
 
 interface SessionStartScreenProps {
   handleStartSession: () => void;
 }
 
 const SessionStartScreen: React.FC<SessionStartScreenProps> = ({ handleStartSession }) => {
-  const { setCustomSessionTime, selectedIndustry, selectIndustry } = useSession();
+  const { setCustomSessionTime, selectedIndustry } = useSession();
   const [isCountingDown, setIsCountingDown] = useState(false);
   const [countdown, setCountdown] = useState(5);
   const [customTime, setCustomTime] = useState(45);
-
-  useEffect(() => {
-    if (!selectedIndustry) {
-      selectIndustry('random');
-    }
-  }, [selectedIndustry, selectIndustry]);
   
   const sections: WhiteboardSection[] = [
     'problem_discovery',
@@ -38,30 +32,24 @@ const SessionStartScreen: React.FC<SessionStartScreenProps> = ({ handleStartSess
   
   const totalSessionMinutes = customTime;
   
-  const startCountdown = async () => {
-    // Check microphone permissions before starting session
-    const hasPermission = await showMicrophonePermissionPrompt();
+  const startCountdown = () => {
+    // Set the custom session time in the context before starting countdown
+    setCustomSessionTime(customTime);
+    setIsCountingDown(true);
+    setCountdown(5);
     
-    if (hasPermission) {
-      setCustomSessionTime(customTime);
-      setIsCountingDown(true);
-      setCountdown(5);
-      
-      const countdownInterval = setInterval(() => {
-        setCountdown(prev => {
-          if (prev <= 1) {
-            clearInterval(countdownInterval);
-            setTimeout(() => {
-              handleStartSession();
-            }, 0);
-            return 0;
-          }
-          return prev - 1;
-        });
-      }, 1000);
-    } else {
-      toast.error('Session cannot start without microphone access');
-    }
+    const countdownInterval = setInterval(() => {
+      setCountdown(prev => {
+        if (prev <= 1) {
+          clearInterval(countdownInterval);
+          setTimeout(() => {
+            handleStartSession();
+          }, 0);
+          return 0;
+        }
+        return prev - 1;
+      });
+    }, 1000);
   };
 
   const incrementTime = () => {
