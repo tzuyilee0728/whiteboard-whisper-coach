@@ -1,3 +1,4 @@
+
 import { useState, useRef, useEffect } from 'react';
 import { useSession } from '@/context/SessionContext';
 import { toast } from 'sonner';
@@ -8,6 +9,8 @@ export const useAudioRecorder = () => {
   const [mediaRecorder, setMediaRecorder] = useState<MediaRecorder | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [permissionStatus, setPermissionStatus] = useState<'initial' | 'granted' | 'denied'>('initial');
+  const [isRecording, setIsRecording] = useState<boolean>(false);
+  const [isProcessing, setIsProcessing] = useState<boolean>(false);
   const audioChunksRef = useRef<Blob[]>([]);
   const hasInitializedRef = useRef(false);
 
@@ -197,6 +200,8 @@ export const useAudioRecorder = () => {
     permissionStatus,
     audioStream,
     mediaRecorder,
-    error
+    error,
+    isRecording,
+    isProcessing
   };
 };
