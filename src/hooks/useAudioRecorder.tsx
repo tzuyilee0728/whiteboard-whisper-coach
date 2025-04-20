@@ -1,4 +1,3 @@
-
 import { useState, useRef, useEffect } from 'react';
 import { useSession } from '@/context/SessionContext';
 import { toast } from 'sonner';
@@ -8,13 +7,10 @@ export const useAudioRecorder = () => {
   const [audioStream, setAudioStream] = useState<MediaStream | null>(null);
   const [mediaRecorder, setMediaRecorder] = useState<MediaRecorder | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const [isProcessing, setIsProcessing] = useState(false);
+  const [permissionStatus, setPermissionStatus] = useState<'initial' | 'granted' | 'denied'>('initial');
   const audioChunksRef = useRef<Blob[]>([]);
-  const processingTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const { isRecording, setIsRecording, currentSession, updateRecordingTime } = useSession();
   const hasInitializedRef = useRef(false);
-  
-  // Request microphone permission
+
   const requestMicrophonePermission = async () => {
     try {
       console.log('Requesting microphone permission...');
@@ -25,58 +21,84 @@ export const useAudioRecorder = () => {
           autoGainControl: true
         } 
       });
+      
       console.log('Microphone permission granted');
       setAudioStream(stream);
+      setPermissionStatus('granted');
       setError(null);
       return stream;
     } catch (err) {
       console.error('Microphone permission error:', err);
-      setError('Microphone permission denied. Please allow microphone access.');
-      toast.error('Microphone permission denied. Please allow microphone access.');
+      
+      if (err instanceof DOMException) {
+        switch (err.name) {
+          case 'NotAllowedError':
+            setError('Microphone access was denied. Please allow microphone permissions in your browser settings.');
+            toast.error('Microphone access denied. Please check your browser settings.');
+            break;
+          case 'NotFoundError':
+            setError('No microphone device found. Please connect a microphone.');
+            toast.error('No microphone detected. Please connect a microphone.');
+            break;
+          default:
+            setError('Unable to access microphone. An unknown error occurred.');
+            toast.error('Microphone access failed');
+        }
+      }
+      
+      setPermissionStatus('denied');
       return null;
     }
   };
 
-  // Initialize microphone as early as possible
-  useEffect(() => {
-    if (!hasInitializedRef.current) {
-      requestMicrophonePermission();
-      hasInitializedRef.current = true;
+  const checkMicrophonePermission = async () => {
+    try {
+      const devices = await navigator.mediaDevices.enumerateDevices();
+      const audioInputDevices = devices.filter(device => device.kind === 'audioinput');
+      
+      if (audioInputDevices.length === 0) {
+        toast.warning('No microphone devices found');
+        setPermissionStatus('denied');
+        return false;
+      }
+      
+      return true;
+    } catch (error) {
+      console.error('Error checking microphone devices:', error);
+      return false;
     }
-    
-    // Setup automatic chunk processing
-    return () => {
-      if (processingTimerRef.current) {
-        clearTimeout(processingTimerRef.current);
+  };
+
+  useEffect(() => {
+    const initializeMicrophone = async () => {
+      if (!hasInitializedRef.current) {
+        await requestMicrophonePermission();
+        hasInitializedRef.current = true;
       }
     };
+
+    initializeMicrophone();
   }, []);
 
-  // Initialize media recorder when audio stream is available
   useEffect(() => {
     if (audioStream) {
       console.log('Audio stream available, initializing MediaRecorder');
       
-      // Use a consistent encoding format that works well with speech recognition
       const options: MediaRecorderOptions = { 
         mimeType: 'audio/webm' 
       };
       
-      // Check if the preferred MIME type is supported
       if (!MediaRecorder.isTypeSupported(options.mimeType)) {
         console.warn(`${options.mimeType} is not supported, falling back to default`);
-        // Let the browser choose the format
         const recorder = new MediaRecorder(audioStream);
         setMediaRecorder(recorder);
       } else {
-        // Use our preferred format
         const recorder = new MediaRecorder(audioStream, options);
         setMediaRecorder(recorder);
       }
     }
   }, [audioStream]);
 
-  // Set up data handling when mediaRecorder is available
   useEffect(() => {
     if (!mediaRecorder) return;
     
@@ -85,7 +107,6 @@ export const useAudioRecorder = () => {
         console.log(`Audio data available: ${e.data.size} bytes`);
         audioChunksRef.current.push(e.data);
         
-        // Send the latest audio chunk to the transcription service
         if (isRecording && !isProcessing) {
           setIsProcessing(true);
           try {
@@ -104,7 +125,6 @@ export const useAudioRecorder = () => {
     };
   }, [mediaRecorder, isRecording, isProcessing]);
 
-  // Start recording function
   const startRecording = async () => {
     console.log('Starting recording, audioStream exists:', !!audioStream);
     
@@ -116,22 +136,18 @@ export const useAudioRecorder = () => {
     if (mediaRecorder && mediaRecorder.state !== 'recording') {
       audioChunksRef.current = [];
       
-      // Initialize the transcription service
       console.log('Initializing transcription service');
       const initialized = transcriptionService.start();
       console.log('Transcription service initialized:', initialized);
       
-      // Start recording in smaller chunks for real-time processing
-      mediaRecorder.start(1000); // Get data every second for more frequent updates
+      mediaRecorder.start(1000);
       console.log('MediaRecorder started with state:', mediaRecorder.state);
       setIsRecording(true);
       
-      // Show success toast
       toast.success('Recording started');
     } else {
       console.warn('Cannot start recording - recorder not initialized or already recording');
       
-      // If recorder is not initialized, try to initialize it
       if (!mediaRecorder) {
         const stream = await requestMicrophonePermission();
         if (stream) {
@@ -141,7 +157,6 @@ export const useAudioRecorder = () => {
     }
   };
 
-  // Stop recording function
   const stopRecording = () => {
     console.log('Stopping recording, mediaRecorder state:', mediaRecorder?.state);
     
@@ -155,7 +170,6 @@ export const useAudioRecorder = () => {
     return null;
   };
 
-  // Clean up on unmount
   useEffect(() => {
     return () => {
       if (audioStream) {
@@ -164,7 +178,6 @@ export const useAudioRecorder = () => {
     };
   }, [audioStream]);
 
-  // Return the latest audio chunk for real-time processing
   const getLatestAudioChunk = () => {
     if (audioChunksRef.current.length > 0) {
       return audioChunksRef.current[audioChunksRef.current.length - 1];
@@ -172,7 +185,6 @@ export const useAudioRecorder = () => {
     return null;
   };
 
-  // Get all audio chunks
   const getAllAudioChunks = () => {
     return audioChunksRef.current;
   };
@@ -180,10 +192,11 @@ export const useAudioRecorder = () => {
   return {
     startRecording,
     stopRecording,
-    isRecording,
-    error,
-    getLatestAudioChunk,
-    getAllAudioChunks,
-    audioChunksRef
+    requestMicrophonePermission,
+    checkMicrophonePermission,
+    permissionStatus,
+    audioStream,
+    mediaRecorder,
+    error
   };
 };
