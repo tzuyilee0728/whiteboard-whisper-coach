@@ -10,6 +10,7 @@ export const useAudioRecorder = () => {
   const [error, setError] = useState<string | null>(null);
   const [isProcessing, setIsProcessing] = useState(false);
   const audioChunksRef = useRef<Blob[]>([]);
+  const processingTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const { isRecording, setIsRecording, currentSession, updateRecordingTime } = useSession();
   const hasInitializedRef = useRef(false);
   
@@ -17,7 +18,13 @@ export const useAudioRecorder = () => {
   const requestMicrophonePermission = async () => {
     try {
       console.log('Requesting microphone permission...');
-      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      const stream = await navigator.mediaDevices.getUserMedia({ 
+        audio: {
+          echoCancellation: true,
+          noiseSuppression: true,
+          autoGainControl: true
+        } 
+      });
       console.log('Microphone permission granted');
       setAudioStream(stream);
       setError(null);
@@ -36,42 +43,66 @@ export const useAudioRecorder = () => {
       requestMicrophonePermission();
       hasInitializedRef.current = true;
     }
+    
+    // Setup automatic chunk processing
+    return () => {
+      if (processingTimerRef.current) {
+        clearTimeout(processingTimerRef.current);
+      }
+    };
   }, []);
 
   // Initialize media recorder when audio stream is available
   useEffect(() => {
     if (audioStream) {
       console.log('Audio stream available, initializing MediaRecorder');
-      const recorder = new MediaRecorder(audioStream, { 
-        mimeType: MediaRecorder.isTypeSupported('audio/webm') ? 'audio/webm' : 'audio/ogg' 
-      });
       
-      recorder.ondataavailable = async (e) => {
-        if (e.data.size > 0) {
-          console.log(`Audio data available: ${e.data.size} bytes`);
-          audioChunksRef.current.push(e.data);
-          
-          // Send the latest audio chunk to the transcription service
-          if (isRecording && !isProcessing) {
-            setIsProcessing(true);
-            try {
-              await transcriptionService.processAudioChunk(e.data);
-            } catch (error) {
-              console.error('Error processing audio chunk:', error);
-            } finally {
-              setIsProcessing(false);
-            }
+      // Use a consistent encoding format that works well with speech recognition
+      const options: MediaRecorderOptions = { 
+        mimeType: 'audio/webm' 
+      };
+      
+      // Check if the preferred MIME type is supported
+      if (!MediaRecorder.isTypeSupported(options.mimeType)) {
+        console.warn(`${options.mimeType} is not supported, falling back to default`);
+        // Let the browser choose the format
+        const recorder = new MediaRecorder(audioStream);
+        setMediaRecorder(recorder);
+      } else {
+        // Use our preferred format
+        const recorder = new MediaRecorder(audioStream, options);
+        setMediaRecorder(recorder);
+      }
+    }
+  }, [audioStream]);
+
+  // Set up data handling when mediaRecorder is available
+  useEffect(() => {
+    if (!mediaRecorder) return;
+    
+    mediaRecorder.ondataavailable = async (e) => {
+      if (e.data.size > 0) {
+        console.log(`Audio data available: ${e.data.size} bytes`);
+        audioChunksRef.current.push(e.data);
+        
+        // Send the latest audio chunk to the transcription service
+        if (isRecording && !isProcessing) {
+          setIsProcessing(true);
+          try {
+            await transcriptionService.processAudioChunk(e.data);
+          } catch (error) {
+            console.error('Error processing audio chunk:', error);
+          } finally {
+            setIsProcessing(false);
           }
         }
-      };
-      
-      setMediaRecorder(recorder);
-      
-      return () => {
-        recorder.ondataavailable = null;
-      };
-    }
-  }, [audioStream, isRecording]);
+      }
+    };
+    
+    return () => {
+      mediaRecorder.ondataavailable = null;
+    };
+  }, [mediaRecorder, isRecording, isProcessing]);
 
   // Start recording function
   const startRecording = async () => {
@@ -92,7 +123,7 @@ export const useAudioRecorder = () => {
       
       // Start recording in smaller chunks for real-time processing
       mediaRecorder.start(1000); // Get data every second for more frequent updates
-      console.log('MediaRecorder started');
+      console.log('MediaRecorder started with state:', mediaRecorder.state);
       setIsRecording(true);
       
       // Show success toast
@@ -104,7 +135,7 @@ export const useAudioRecorder = () => {
       if (!mediaRecorder) {
         const stream = await requestMicrophonePermission();
         if (stream) {
-          toast.info('Please try recording again');
+          toast.info('Please try recording again in a moment');
         }
       }
     }

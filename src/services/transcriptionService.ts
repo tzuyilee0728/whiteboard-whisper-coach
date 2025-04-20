@@ -6,14 +6,40 @@ export class TranscriptionService {
   private isUsingAPI: boolean = false;
   private isInitialized: boolean = false;
   private debugMode: boolean = true; // Enable debug mode to log more details
+  private hasAttemptedInit: boolean = false;
 
   constructor() {
-    // If browser speech recognition isn't available, use API fallback
-    if (!('SpeechRecognition' in window || 'webkitSpeechRecognition' in window)) {
+    // More robust detection of SpeechRecognition
+    const hasSpeechRecognition = 'SpeechRecognition' in window || 'webkitSpeechRecognition' in window;
+    
+    if (!hasSpeechRecognition) {
       this.isUsingAPI = true;
       this.log('Speech Recognition API not supported in this browser, will use external API');
     } else {
-      this.log('Using browser Speech Recognition API');
+      this.log('Browser supports Speech Recognition API, will try to use it');
+    }
+
+    // Try to initialize immediately
+    this.tryInit();
+  }
+
+  private tryInit() {
+    if (this.hasAttemptedInit) return;
+    
+    this.hasAttemptedInit = true;
+    
+    // If we're using browser recognition, try to initialize it early
+    if (!this.isUsingAPI) {
+      this.log('Attempting early initialization of browser speech recognition');
+      try {
+        const canInit = browserSpeechService.initialize();
+        this.log('Early browser speech init result:', canInit);
+      } catch (error) {
+        this.log('Error in early browser speech initialization:', error);
+        // Fallback to API if browser speech fails to initialize
+        this.log('Falling back to API transcription due to browser speech initialization failure');
+        this.isUsingAPI = true;
+      }
     }
   }
 
@@ -26,24 +52,29 @@ export class TranscriptionService {
   public async processAudioChunk(audioChunk: Blob) {
     this.log('Processing audio chunk, size:', audioChunk.size, 'bytes');
     
-    // Ignore very small audio chunks (likely silence)
-    if (audioChunk.size < 500) {
-      this.log('Audio chunk too small, likely silence - skipping');
+    try {
+      // Ignore very small audio chunks (likely silence)
+      if (audioChunk.size < 500) {
+        this.log('Audio chunk too small, likely silence - skipping');
+        return '';
+      }
+      
+      if (this.isUsingAPI) {
+        this.log('Sending to API for processing');
+        return await audioProcessingService.processAudioChunk(audioChunk);
+      }
+      
+      // In browser mode, chunks are handled internally by the speech recognition API
+      this.log('In browser mode - chunks processed by speech recognition API');
+      return '';
+    } catch (error) {
+      this.log('Error processing audio chunk:', error);
       return '';
     }
-    
-    if (this.isUsingAPI) {
-      this.log('Sending to API for processing');
-      return await audioProcessingService.processAudioChunk(audioChunk);
-    }
-    
-    // In browser mode, chunks are handled internally by the speech recognition API
-    this.log('In browser mode - chunks processed by speech recognition API');
-    return '';
   }
 
   public start() {
-    this.log('Starting transcription service');
+    this.log('Starting transcription service, using API:', this.isUsingAPI);
     this.isInitialized = true;
     
     if (this.isUsingAPI) {
@@ -52,7 +83,16 @@ export class TranscriptionService {
     }
     
     this.log('Starting browser speech recognition service');
-    return browserSpeechService.start();
+    const startResult = browserSpeechService.start();
+    
+    // If browser speech fails to start, fallback to API
+    if (!startResult) {
+      this.log('Browser speech recognition failed to start, falling back to API');
+      this.isUsingAPI = true;
+      return true; // API mode is always ready
+    }
+    
+    return startResult;
   }
 
   public stop() {
@@ -103,6 +143,10 @@ export class TranscriptionService {
 
   public isReady(): boolean {
     return this.isInitialized;
+  }
+
+  public getMode(): string {
+    return this.isUsingAPI ? 'api' : 'browser';
   }
 }
 

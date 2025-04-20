@@ -8,16 +8,32 @@ export class BrowserSpeechService {
   private interimTranscript: string = '';
   private finalTranscript: string = '';
   private debugMode: boolean = true;
+  private isInitialized: boolean = false;
+  private hasPermission: boolean = false;
 
   constructor() {
+    this.initialize();
+  }
+
+  public initialize(): boolean {
+    if (this.isInitialized) return true;
+    
     if (typeof window !== 'undefined' && ('SpeechRecognition' in window || 'webkitSpeechRecognition' in window)) {
-      // @ts-ignore - TypeScript doesn't know about webkitSpeechRecognition
-      const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-      this.recognitionInstance = new SpeechRecognition();
-      this.configureRecognition();
-      this.log('Browser Speech Recognition initialized');
+      try {
+        // @ts-ignore - TypeScript doesn't know about webkitSpeechRecognition
+        const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+        this.recognitionInstance = new SpeechRecognition();
+        this.configureRecognition();
+        this.log('Browser Speech Recognition initialized');
+        this.isInitialized = true;
+        return true;
+      } catch (error) {
+        this.log('Error initializing speech recognition:', error);
+        return false;
+      }
     } else {
       this.log('Speech Recognition API not supported in this browser');
+      return false;
     }
   }
 
@@ -37,13 +53,22 @@ export class BrowserSpeechService {
 
     this.recognitionInstance.onresult = this.handleRecognitionResult.bind(this);
     this.recognitionInstance.onerror = this.handleRecognitionError.bind(this);
-    this.recognitionInstance.onstart = () => this.log('Speech recognition started');
+    this.recognitionInstance.onstart = () => {
+      this.log('Speech recognition started');
+      this.hasPermission = true;
+    };
     this.recognitionInstance.onend = () => {
       this.log('Speech recognition ended - restarting');
-      // Auto restart recognition if it ends unexpectedly
-      if (this.recognitionInstance) {
+      // Auto restart recognition if it ends unexpectedly and we have permission
+      if (this.recognitionInstance && this.hasPermission) {
         try {
-          this.recognitionInstance.start();
+          // Small delay to prevent rapid restart cycles
+          setTimeout(() => {
+            if (this.hasPermission) {
+              this.recognitionInstance?.start();
+              this.log('Recognition restarted after end event');
+            }
+          }, 300);
         } catch (e) {
           this.log('Error restarting recognition:', e);
         }
@@ -78,16 +103,25 @@ export class BrowserSpeechService {
   private handleRecognitionError(event: SpeechRecognitionEvent) {
     this.log('Recognition error:', event.error);
     
-    if (event.error === 'not-allowed') {
+    if (event.error === 'not-allowed' || event.error === 'permission-denied') {
       toast.error('Microphone access denied. Please allow microphone access.');
+      this.hasPermission = false;
     } else if (event.error === 'network') {
       this.log('Network error in speech recognition - this is normal in development');
+    } else if (event.error === 'no-speech') {
+      this.log('No speech detected - this is normal during silence');
     } else {
       toast.error(`Speech recognition error: ${event.error}`);
     }
   }
 
   public start(): boolean {
+    if (!this.isInitialized) {
+      if (!this.initialize()) {
+        return false;
+      }
+    }
+    
     if (this.recognitionInstance) {
       try {
         this.log('Starting speech recognition');

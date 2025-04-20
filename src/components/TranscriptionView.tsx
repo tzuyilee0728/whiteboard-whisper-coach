@@ -1,17 +1,20 @@
 
 import React, { useState, useEffect, useRef } from 'react';
-import { Mic, AlertTriangle } from 'lucide-react';
+import { Mic, AlertTriangle, Info } from 'lucide-react';
 import { useSession } from '@/context/SessionContext';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { transcriptionService } from '@/services/transcriptionService';
 import { aiAnalysisService } from '@/services/aiAnalysisService';
+import { toast } from 'sonner';
 
 const TranscriptionView = () => {
   const { isRecording, currentSession, currentSection, isPaused } = useSession();
   const [transcription, setTranscription] = useState<string>('');
   const [feedback, setFeedback] = useState<string[]>([]);
   const [transcriptionStatus, setTranscriptionStatus] = useState<'idle' | 'waiting' | 'transcribing'>('idle');
+  const [transcriptionMode, setTranscriptionMode] = useState<string>('');
   const transcriptionRef = useRef<HTMLDivElement>(null);
+  const initAttemptedRef = useRef<boolean>(false);
 
   useEffect(() => {
     // Reset transcription when session starts
@@ -21,6 +24,9 @@ const TranscriptionView = () => {
       
       // Reset transcription service
       transcriptionService.reset();
+      
+      // Set mode for UI display
+      setTranscriptionMode(transcriptionService.getMode());
     }
   }, [currentSession]);
 
@@ -31,6 +37,16 @@ const TranscriptionView = () => {
       // Set status to waiting when recording starts
       if (isRecording && !isPaused) {
         setTranscriptionStatus('waiting');
+        
+        // Notify the user about which mode we're using
+        setTimeout(() => {
+          const mode = transcriptionService.getMode();
+          setTranscriptionMode(mode);
+          
+          toast.info(`Using ${mode === 'api' ? 'API' : 'browser'} speech recognition`);
+          
+          console.log('Speech recognition mode:', mode);
+        }, 1000);
       }
       
       // Always initialize to get current transcript
@@ -88,6 +104,11 @@ const TranscriptionView = () => {
           {isRecording && !isPaused && (
             <span className="ml-2 h-2 w-2 rounded-full bg-red-500 animate-pulse"></span>
           )}
+          {transcriptionMode && (
+            <span className="ml-2 text-xs bg-gray-100 px-2 py-1 rounded">
+              {transcriptionMode === 'api' ? 'API Mode' : 'Browser Mode'}
+            </span>
+          )}
         </div>
       </div>
       
@@ -98,7 +119,15 @@ const TranscriptionView = () => {
               <div className="border-b pb-2 mb-2">
                 <p className="text-sm font-medium">Transcription:</p>
                 <p className="text-sm whitespace-pre-wrap">
-                  {transcription || (transcriptionStatus === 'waiting' ? "Waiting for speech..." : "Speak to see transcription")}
+                  {transcription || (
+                    transcriptionStatus === 'waiting' ? (
+                      <span className="text-gray-500">
+                        Waiting for speech... <span className="animate-pulse">●</span>
+                      </span>
+                    ) : (
+                      <span className="text-gray-500">Speak to see transcription</span>
+                    )
+                  )}
                 </p>
               </div>
               
@@ -120,6 +149,21 @@ const TranscriptionView = () => {
               <AlertTriangle className="h-10 w-10 mb-2 text-amber-500" />
               <p>Start recording to see live transcription</p>
               <p className="text-xs mt-2">Transcription will appear here when you begin speaking</p>
+            </div>
+          )}
+          
+          {isRecording && !isPaused && transcriptionStatus === 'waiting' && !transcription && (
+            <div className="mt-4 p-3 bg-blue-50 rounded-lg border border-blue-100 flex items-start">
+              <Info className="h-5 w-5 text-blue-500 mt-0.5 mr-2 flex-shrink-0" />
+              <div className="text-sm">
+                <p className="font-medium text-blue-800">Waiting for speech</p>
+                <ul className="mt-1 list-disc list-inside text-blue-700 space-y-1">
+                  <li>Speak clearly into your microphone</li>
+                  <li>Make sure your browser has microphone permissions</li>
+                  <li>Try speaking a bit louder if nothing happens</li>
+                  <li>Check console logs for details on the transcription mode</li>
+                </ul>
+              </div>
             </div>
           )}
         </div>
