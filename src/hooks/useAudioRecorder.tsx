@@ -1,21 +1,35 @@
 
-import { useState, useRef, useEffect } from 'react';
+import { useRef, useEffect } from 'react';
 import { useSession } from '@/context/SessionContext';
 import { transcriptionService } from '@/services/transcriptionService';
-import { requestMicrophonePermission, checkMicrophonePermission, type PermissionStatus } from '@/utils/microphonePermission';
+import { requestMicrophonePermission, checkMicrophonePermission } from '@/utils/microphonePermission';
 import { useMediaRecorder } from '@/hooks/useMediaRecorder';
+import { useRecordingState } from '@/hooks/useRecordingState';
+import { useAudioProcessing } from '@/hooks/useAudioProcessing';
 import { toast } from 'sonner';
 
 export const useAudioRecorder = () => {
-  const [audioStream, setAudioStream] = useState<MediaStream | null>(null);
-  const [error, setError] = useState<string | null>(null);
-  const [permissionStatus, setPermissionStatus] = useState<PermissionStatus>('initial');
-  const [isRecording, setIsRecording] = useState<boolean>(false);
-  const [isProcessing, setIsProcessing] = useState<boolean>(false);
-  const audioChunksRef = useRef<Blob[]>([]);
+  const {
+    audioStream,
+    setAudioStream,
+    error,
+    setError,
+    permissionStatus,
+    setPermissionStatus,
+    isRecording,
+    setIsRecording,
+    isProcessing,
+    setIsProcessing
+  } = useRecordingState();
+
   const hasInitializedRef = useRef(false);
-  
   const { mediaRecorder } = useMediaRecorder(audioStream);
+  const { getAudioChunks, clearAudioChunks } = useAudioProcessing(
+    mediaRecorder,
+    isRecording,
+    isProcessing,
+    setIsProcessing
+  );
 
   useEffect(() => {
     const initializeMicrophone = async () => {
@@ -29,33 +43,7 @@ export const useAudioRecorder = () => {
     };
 
     initializeMicrophone();
-  }, []);
-
-  useEffect(() => {
-    if (!mediaRecorder) return;
-    
-    mediaRecorder.ondataavailable = async (e) => {
-      if (e.data.size > 0) {
-        console.log(`Audio data available: ${e.data.size} bytes`);
-        audioChunksRef.current.push(e.data);
-        
-        if (isRecording && !isProcessing) {
-          setIsProcessing(true);
-          try {
-            await transcriptionService.processAudioChunk(e.data);
-          } catch (error) {
-            console.error('Error processing audio chunk:', error);
-          } finally {
-            setIsProcessing(false);
-          }
-        }
-      }
-    };
-    
-    return () => {
-      mediaRecorder.ondataavailable = null;
-    };
-  }, [mediaRecorder, isRecording, isProcessing]);
+  }, [setAudioStream, setPermissionStatus, setError]);
 
   const startRecording = async () => {
     console.log('Starting recording, audioStream exists:', !!audioStream);
@@ -72,7 +60,7 @@ export const useAudioRecorder = () => {
     }
     
     if (mediaRecorder && mediaRecorder.state !== 'recording') {
-      audioChunksRef.current = [];
+      clearAudioChunks();
       
       console.log('Initializing transcription service');
       transcriptionService.start();
@@ -102,7 +90,7 @@ export const useAudioRecorder = () => {
       transcriptionService.stop();
       setIsRecording(false);
       toast.info('Recording stopped');
-      return new Blob(audioChunksRef.current, { type: 'audio/webm' });
+      return new Blob(getAudioChunks(), { type: 'audio/webm' });
     }
     return null;
   };
