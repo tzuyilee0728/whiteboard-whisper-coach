@@ -9,6 +9,7 @@ import { WhiteboardSection } from '@/types';
 import { sectionTimings } from '@/services/mockData';
 import { toast } from 'sonner';
 import { Slider } from '@/components/ui/slider';
+import { showMicrophonePermissionPrompt } from '@/utils/permissionPrompt';
 
 interface SessionStartScreenProps {
   handleStartSession: () => void;
@@ -37,23 +38,30 @@ const SessionStartScreen: React.FC<SessionStartScreenProps> = ({ handleStartSess
   
   const totalSessionMinutes = customTime;
   
-  const startCountdown = () => {
-    setCustomSessionTime(customTime);
-    setIsCountingDown(true);
-    setCountdown(5);
+  const startCountdown = async () => {
+    // Check microphone permissions before starting session
+    const hasPermission = await showMicrophonePermissionPrompt();
     
-    const countdownInterval = setInterval(() => {
-      setCountdown(prev => {
-        if (prev <= 1) {
-          clearInterval(countdownInterval);
-          setTimeout(() => {
-            handleStartSession();
-          }, 0);
-          return 0;
-        }
-        return prev - 1;
-      });
-    }, 1000);
+    if (hasPermission) {
+      setCustomSessionTime(customTime);
+      setIsCountingDown(true);
+      setCountdown(5);
+      
+      const countdownInterval = setInterval(() => {
+        setCountdown(prev => {
+          if (prev <= 1) {
+            clearInterval(countdownInterval);
+            setTimeout(() => {
+              handleStartSession();
+            }, 0);
+            return 0;
+          }
+          return prev - 1;
+        });
+      }, 1000);
+    } else {
+      toast.error('Session cannot start without microphone access');
+    }
   };
 
   const incrementTime = () => {
