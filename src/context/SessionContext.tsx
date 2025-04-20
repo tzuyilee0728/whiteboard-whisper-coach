@@ -1,4 +1,3 @@
-
 import React, { createContext, useContext } from 'react';
 import { Challenge, Session, WhiteboardSection, AudioRecording, Category } from '@/types';
 import { SessionProvider } from './SessionProvider';
@@ -10,7 +9,7 @@ interface SessionContextType {
   currentSession: Session | null;
   currentSection: WhiteboardSection;
   isRecording: boolean;
-  setIsRecording: (isRecording: boolean) => void; // Added this line to fix the error
+  setIsRecording: (isRecording: boolean) => void;
   recordingTime: number;
   sectionProgress: Record<WhiteboardSection, number>;
   audioRecordings: AudioRecording[];
@@ -31,10 +30,8 @@ interface SessionContextType {
   handlePauseResumeSession: () => void;
 }
 
-// Create context with undefined as default value
 const SessionContext = createContext<SessionContextType | undefined>(undefined);
 
-// Custom hook to use the session context
 export const useSession = () => {
   const context = useContext(SessionContext);
   if (!context) {

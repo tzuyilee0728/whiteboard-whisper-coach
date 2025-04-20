@@ -1,4 +1,3 @@
-
 import { useCallback } from 'react';
 import { Category, Challenge, AudioRecording, WhiteboardSection } from '@/types';
 import { generateSessionFeedback } from '@/context/sessionUtils';
@@ -31,14 +30,10 @@ export const useSessionManager = (state: ReturnType<typeof import('./useSessionS
   }, [state]);
 
   const startSession = useCallback(() => {
-    if (!state.selectedIndustry) {
-      toast.error("Please select an industry first");
-      return;
-    }
+    // If no industry is selected, default to 'random'
+    let industryForChallenge = state.selectedIndustry || 'random';
     
-    let industryForChallenge = state.selectedIndustry;
-    
-    if (state.selectedIndustry === 'random') {
+    if (industryForChallenge === 'random') {
       const availableIndustries: Category[] = ['e-commerce', 'healthcare', 'finance', 'social', 'productivity'];
       const randomIndex = Math.floor(Math.random() * availableIndustries.length);
       industryForChallenge = availableIndustries[randomIndex];
