@@ -42,18 +42,45 @@ serve(async (req) => {
       body: formData,
     });
 
+    const transcriptionResponseText = await transcriptionResponse.text();
+
     if (!transcriptionResponse.ok) {
-      const errorText = await transcriptionResponse.text();
-      console.error("OpenAI API error:", errorText);
-      throw new Error(`Failed to transcribe audio: ${errorText}`);
+      console.error("OpenAI API error:", transcriptionResponseText);
+      
+      // Try to parse the error message
+      try {
+        const errorJson = JSON.parse(transcriptionResponseText);
+        return new Response(
+          JSON.stringify({ 
+            error: errorJson.error?.message || 'Failed to transcribe audio' 
+          }),
+          { 
+            headers: { 
+              ...corsHeaders, 
+              'Content-Type': 'application/json' 
+            } 
+          }
+        );
+      } catch (e) {
+        return new Response(
+          JSON.stringify({ error: `Failed to transcribe audio: ${transcriptionResponseText}` }),
+          { 
+            headers: { 
+              ...corsHeaders, 
+              'Content-Type': 'application/json' 
+            } 
+          }
+        );
+      }
     }
 
-    const transcription = await transcriptionResponse.json();
-    console.log("Transcription received:", transcription.text);
+    // Parse the transcription response
+    const transcriptionData = JSON.parse(transcriptionResponseText);
+    console.log("Transcription received:", transcriptionData.text);
 
     // Only get feedback if we have text and a section
     let feedback = "";
-    if (transcription.text && transcription.text.trim() && section) {
+    if (transcriptionData.text && transcriptionData.text.trim() && section) {
       try {
         // Perplexity AI Feedback based on transcription
         const perplexityResponse = await fetch('https://api.perplexity.ai/chat/completions', {
@@ -73,7 +100,7 @@ serve(async (req) => {
               },
               {
                 role: 'user',
-                content: transcription.text
+                content: transcriptionData.text
               }
             ],
             max_tokens: 150,
@@ -90,12 +117,13 @@ serve(async (req) => {
         }
       } catch (feedbackError) {
         console.error("Error getting feedback:", feedbackError);
+        // We don't throw here, as we still want to return the transcription
       }
     }
 
     return new Response(
       JSON.stringify({ 
-        transcription: transcription.text, 
+        transcription: transcriptionData.text, 
         feedback 
       }), 
       { 

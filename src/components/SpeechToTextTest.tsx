@@ -4,11 +4,13 @@ import { Button } from '@/components/ui/button';
 import { transcriptionService } from '@/services/transcription';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
+import { AlertCircle } from 'lucide-react';
 
 const SpeechToTextTest = () => {
   const [isListening, setIsListening] = useState(false);
   const [transcription, setTranscription] = useState('');
   const [isProcessing, setIsProcessing] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const audioChunksRef = useRef<Blob[]>([]);
 
@@ -23,6 +25,7 @@ const SpeechToTextTest = () => {
 
   const handleStartTest = async () => {
     try {
+      setError(null);
       // Request microphone access
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
       
@@ -50,22 +53,32 @@ const SpeechToTextTest = () => {
           const base64Audio = await blobToBase64(audioBlob);
           
           // Send to Supabase Edge Function
-          const { data, error } = await supabase.functions.invoke('transcribe-and-analyze', {
+          const { data, error: supabaseError } = await supabase.functions.invoke('transcribe-and-analyze', {
             body: JSON.stringify({
               audio: base64Audio,
               section: 'test-section'
             })
           });
 
-          if (error) {
-            console.error('Edge function error:', error);
-            toast.error('Transcription error: ' + error.message);
+          if (supabaseError) {
+            console.error('Edge function error:', supabaseError);
+            setError(`Edge function error: ${supabaseError.message || 'Unknown error'}`);
+            toast.error('Transcription error: ' + (supabaseError.message || 'Unknown error'));
             return;
           }
           
+          if (data?.error) {
+            console.error('Transcription API error:', data.error);
+            setError(`Transcription API error: ${data.error}`);
+            toast.error('Transcription error: ' + data.error);
+            return;
+          }
+
           if (data?.transcription) {
             setTranscription(prev => prev ? `${prev}\n${data.transcription}` : data.transcription);
             toast.success('Transcription received!');
+          } else {
+            toast.warning('No transcription received');
           }
           
           if (data?.feedback) {
@@ -73,10 +86,16 @@ const SpeechToTextTest = () => {
           }
         } catch (err) {
           console.error('Error processing audio:', err);
+          setError(`Error processing audio: ${err instanceof Error ? err.message : String(err)}`);
           toast.error('Error processing audio: ' + (err instanceof Error ? err.message : String(err)));
         } finally {
           setIsProcessing(false);
           setIsListening(false);
+          
+          // Stop all tracks to release the microphone
+          if (mediaRecorderRef.current && mediaRecorderRef.current.stream) {
+            mediaRecorderRef.current.stream.getTracks().forEach(track => track.stop());
+          }
         }
       };
 
@@ -87,6 +106,7 @@ const SpeechToTextTest = () => {
       
     } catch (error) {
       console.error('Error starting recording:', error);
+      setError(`Error starting recording: ${error instanceof Error ? error.message : String(error)}`);
       toast.error('Error starting speech recognition: ' + (error instanceof Error ? error.message : String(error)));
     }
   };
@@ -94,10 +114,6 @@ const SpeechToTextTest = () => {
   const handleStopTest = () => {
     if (mediaRecorderRef.current && mediaRecorderRef.current.state === 'recording') {
       mediaRecorderRef.current.stop();
-      
-      // Stop all tracks to release the microphone
-      mediaRecorderRef.current.stream.getTracks().forEach(track => track.stop());
-      
       toast.info('Processing your speech...');
     }
   };
@@ -139,6 +155,22 @@ const SpeechToTextTest = () => {
             Stop Recording
           </Button>
         </div>
+        
+        {error && (
+          <div className="mt-4 p-3 bg-red-50 border border-red-200 text-red-700 rounded flex items-start">
+            <AlertCircle className="h-5 w-5 mr-2 mt-0.5 flex-shrink-0" />
+            <div>
+              <p className="font-medium">Transcription Error</p>
+              <p className="text-sm">{error}</p>
+              {error.includes('quota') && (
+                <p className="mt-2 text-sm">
+                  <strong>Note:</strong> Your OpenAI API key appears to have reached its usage limit.
+                  Please check your OpenAI account billing details or replace your API key.
+                </p>
+              )}
+            </div>
+          </div>
+        )}
         
         {transcription && (
           <div className="mt-4 p-3 bg-gray-100 rounded">
