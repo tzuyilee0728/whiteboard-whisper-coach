@@ -1,6 +1,5 @@
 
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-import OpenAI from "https://esm.sh/openai@4.24.4";
 import { processBase64Chunks } from "./utils.ts";
 
 const corsHeaders = {
@@ -17,6 +16,12 @@ serve(async (req) => {
   try {
     const { audio, section } = await req.json();
 
+    if (!audio) {
+      throw new Error('No audio data provided');
+    }
+
+    console.log(`Received audio data for section: ${section}`);
+    
     // Convert base64 to binary
     const binaryAudio = processBase64Chunks(audio);
     
@@ -24,14 +29,11 @@ serve(async (req) => {
     const audioBlob = new Blob([binaryAudio], { type: 'audio/webm' });
     
     // OpenAI Whisper Transcription
-    const openai = new OpenAI({
-      apiKey: Deno.env.get('OPENAI_API_KEY')
-    });
-
     const formData = new FormData();
     formData.append('file', audioBlob, 'audio.webm');
     formData.append('model', 'whisper-1');
 
+    console.log("Sending request to OpenAI Whisper API");
     const transcriptionResponse = await fetch('https://api.openai.com/v1/audio/transcriptions', {
       method: 'POST',
       headers: {
@@ -41,39 +43,55 @@ serve(async (req) => {
     });
 
     if (!transcriptionResponse.ok) {
-      throw new Error('Failed to transcribe audio');
+      const errorText = await transcriptionResponse.text();
+      console.error("OpenAI API error:", errorText);
+      throw new Error(`Failed to transcribe audio: ${errorText}`);
     }
 
     const transcription = await transcriptionResponse.json();
+    console.log("Transcription received:", transcription.text);
 
-    // Perplexity AI Feedback based on transcription
-    const perplexityResponse = await fetch('https://api.perplexity.ai/chat/completions', {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${Deno.env.get('PERPLEXITY_API_KEY')}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        model: 'llama-3.1-sonar-small-128k-online',
-        messages: [
-          {
-            role: 'system',
-            content: `You are an AI assistant providing real-time feedback on a whiteboard challenge. 
-            The current section is ${section}. 
-            Provide concise, constructive feedback based on the user's transcribed speech.`
+    // Only get feedback if we have text and a section
+    let feedback = "";
+    if (transcription.text && transcription.text.trim() && section) {
+      try {
+        // Perplexity AI Feedback based on transcription
+        const perplexityResponse = await fetch('https://api.perplexity.ai/chat/completions', {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${Deno.env.get('PERPLEXITY_API_KEY')}`,
+            'Content-Type': 'application/json',
           },
-          {
-            role: 'user',
-            content: transcription.text
-          }
-        ],
-        max_tokens: 150,
-        temperature: 0.7
-      }),
-    });
+          body: JSON.stringify({
+            model: 'llama-3.1-sonar-small-128k-online',
+            messages: [
+              {
+                role: 'system',
+                content: `You are an AI assistant providing real-time feedback on a whiteboard challenge. 
+                The current section is ${section}. 
+                Provide concise, constructive feedback based on the user's transcribed speech.`
+              },
+              {
+                role: 'user',
+                content: transcription.text
+              }
+            ],
+            max_tokens: 150,
+            temperature: 0.7
+          }),
+        });
 
-    const perplexityData = await perplexityResponse.json();
-    const feedback = perplexityData.choices[0]?.message?.content || '';
+        if (perplexityResponse.ok) {
+          const perplexityData = await perplexityResponse.json();
+          feedback = perplexityData.choices[0]?.message?.content || '';
+          console.log("Feedback received:", feedback);
+        } else {
+          console.error("Perplexity API error:", await perplexityResponse.text());
+        }
+      } catch (feedbackError) {
+        console.error("Error getting feedback:", feedbackError);
+      }
+    }
 
     return new Response(
       JSON.stringify({ 

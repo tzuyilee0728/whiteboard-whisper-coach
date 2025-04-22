@@ -30,15 +30,16 @@ const AudioRecorder = () => {
   };
   
   // Combined handler to pause/resume both session and recording
-  const handleRecordingToggle = () => {
+  const handleRecordingToggle = async () => {
     if (isRecording) {
-      stopRecording();
+      await stopRecording();
       // If session isn't already paused, pause it
       if (!isPaused) {
         handlePauseResumeSession();
       }
     } else {
-      startRecording();
+      const started = await startRecording();
+      console.log("Recording started:", started);
       // If session is paused, resume it
       if (isPaused) {
         handlePauseResumeSession();

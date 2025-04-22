@@ -33,10 +33,10 @@ export const useAudioRecorder = () => {
         if (e.data.size > 0) {
           audioChunksRef.current.push(e.data);
           
-          const base64Audio = await blobToBase64(e.data);
-          
           if (isRecording && currentSession) {
             try {
+              const base64Audio = await blobToBase64(e.data);
+              
               const { data, error } = await supabase.functions.invoke('transcribe-and-analyze', {
                 body: JSON.stringify({
                   audio: base64Audio,
@@ -44,13 +44,18 @@ export const useAudioRecorder = () => {
                 })
               });
 
-              if (error) throw error;
+              if (error) {
+                console.error('Edge function error:', error);
+                throw error;
+              }
               
-              if (data.transcription) {
+              if (data?.transcription) {
+                console.log('Received transcription:', data.transcription);
                 transcriptionService.updateTranscript(data.transcription);
               }
               
-              if (data.feedback) {
+              if (data?.feedback) {
+                console.log('Received feedback:', data.feedback);
                 transcriptionService.updateFeedback(data.feedback);
               }
             } catch (err) {
@@ -92,7 +97,7 @@ export const useAudioRecorder = () => {
     
     if (mediaRecorder && mediaRecorder.state !== 'recording') {
       audioChunksRef.current = [];
-      mediaRecorder.start(1000);
+      mediaRecorder.start(1000); // Capture audio every second
       setIsRecording(true);
     }
   };
