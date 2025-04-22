@@ -25,8 +25,8 @@ serve(async (req) => {
     // Convert base64 to binary
     const binaryAudio = processBase64Chunks(audio);
     
-    // Create blob for OpenAI API
-    const audioBlob = new Blob([binaryAudio], { type: 'audio/webm' });
+    // Create blob for OpenAI API with explicit mime type
+    const audioBlob = new Blob([binaryAudio], { type: 'audio/webm;codecs=opus' });
     
     // OpenAI Whisper Transcription
     const formData = new FormData();

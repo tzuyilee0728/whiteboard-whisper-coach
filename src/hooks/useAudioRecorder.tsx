@@ -1,3 +1,4 @@
+
 import { useState, useRef, useEffect } from 'react';
 import { useSession } from '@/context/SessionContext';
 import { toast } from 'sonner';
@@ -13,7 +14,14 @@ export const useAudioRecorder = () => {
   
   const requestMicrophonePermission = async () => {
     try {
-      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      const stream = await navigator.mediaDevices.getUserMedia({ 
+        audio: { 
+          echoCancellation: true,
+          noiseSuppression: true,
+          channelCount: 1,
+          sampleRate: 16000
+        } 
+      });
       setAudioStream(stream);
       setError(null);
       return stream;
@@ -26,7 +34,10 @@ export const useAudioRecorder = () => {
 
   useEffect(() => {
     if (audioStream) {
-      const recorder = new MediaRecorder(audioStream);
+      // Use audio/webm;codecs=opus format which is supported by OpenAI
+      const recorder = new MediaRecorder(audioStream, {
+        mimeType: 'audio/webm;codecs=opus'
+      });
       
       recorder.ondataavailable = async (e) => {
         if (e.data.size > 0) {
@@ -91,21 +102,23 @@ export const useAudioRecorder = () => {
   const startRecording = async () => {
     if (!audioStream) {
       const stream = await requestMicrophonePermission();
-      if (!stream) return;
+      if (!stream) return false;
     }
     
     if (mediaRecorder && mediaRecorder.state !== 'recording') {
       audioChunksRef.current = [];
-      mediaRecorder.start(1000); // Capture audio every second
+      mediaRecorder.start(2000); // Capture audio every 2 seconds
       setIsRecording(true);
+      return true;
     }
+    return false;
   };
 
   const stopRecording = () => {
     if (mediaRecorder && mediaRecorder.state === 'recording') {
       mediaRecorder.stop();
       setIsRecording(false);
-      return new Blob(audioChunksRef.current, { type: 'audio/webm' });
+      return new Blob(audioChunksRef.current, { type: 'audio/webm;codecs=opus' });
     }
     return null;
   };
