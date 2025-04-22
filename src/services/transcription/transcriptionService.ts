@@ -8,6 +8,7 @@ export class TranscriptionService {
   private webSpeechService: WebSpeechService;
   private onTranscriptUpdateCallback: ((transcript: string) => void) | null = null;
   private onFeedbackCallback: ((feedback: string) => void) | null = null;
+  private onErrorCallback: ((error: string) => void) | null = null;
   private interimTranscript: string = '';
   private finalTranscript: string = '';
   private isRecognitionActive: boolean = false;
@@ -15,6 +16,8 @@ export class TranscriptionService {
   private isUsingAPI: boolean = false;
   private audioQueue: Blob[] = [];
   private isProcessingAudio: boolean = false;
+  private retryCount: number = 0;
+  private maxRetries: number = 3;
 
   constructor() {
     this.webSpeechService = new WebSpeechService();
@@ -29,7 +32,11 @@ export class TranscriptionService {
         }
       },
       (error: string) => {
-        toast.error(error);
+        if (this.onErrorCallback) {
+          this.onErrorCallback(error);
+        } else {
+          toast.error(error);
+        }
       }
     );
   }
@@ -63,6 +70,8 @@ export class TranscriptionService {
         return;
       }
 
+      console.log(`Processing audio chunk. Size: ${audioChunk.size} bytes, Type: ${audioChunk.type}`);
+
       const arrayBuffer = await audioChunk.arrayBuffer();
       const base64Audio = arrayBufferToBase64(arrayBuffer);
       
@@ -71,7 +80,9 @@ export class TranscriptionService {
         language: this.apiConfig.language,
       });
 
-      const response = await fetch(this.apiConfig.apiUrl, {
+      console.log('Sending audio to Supabase edge function...');
+      
+      const response = await fetch('https://xqbazrlsytdhzfitmtcc.functions.supabase.co/transcribe-and-analyze', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -81,27 +92,60 @@ export class TranscriptionService {
       });
 
       if (!response.ok) {
-        throw new Error(`API error: ${response.status}`);
+        const errorText = await response.text();
+        console.error('API error response:', errorText);
+        
+        throw new Error(`API error: ${response.status} - ${errorText}`);
       }
 
       const data = await response.json();
       
-      if (data.text || data.transcript) {
-        const transcriptText = data.text || data.transcript;
-        this.finalTranscript += ' ' + transcriptText;
+      if (data.error) {
+        throw new Error(data.error);
+      }
+      
+      if (data.transcription) {
+        console.log('Received transcription:', data.transcription);
+        this.finalTranscript += ' ' + data.transcription;
         
         if (this.onTranscriptUpdateCallback) {
-          this.onTranscriptUpdateCallback(this.finalTranscript);
+          this.onTranscriptUpdateCallback(data.transcription);
         }
       }
+      
+      if (data.feedback) {
+        console.log('Received feedback:', data.feedback);
+        if (this.onFeedbackCallback) {
+          this.onFeedbackCallback(data.feedback);
+        }
+      }
+      
+      // Reset retry counter on success
+      this.retryCount = 0;
+      
     } catch (error) {
       console.error('Error processing audio for transcription:', error);
-      if (this.audioQueue.length === 0) {
-        toast.error('Error connecting to transcription API');
+      
+      if (this.retryCount < this.maxRetries) {
+        this.retryCount++;
+        console.log(`Retrying transcription (${this.retryCount}/${this.maxRetries})...`);
+        // Put the chunk back at the front of the queue for retry
+        if (this.audioQueue.length > 0) {
+          this.audioQueue.unshift(this.audioQueue[0]);
+        }
+      } else {
+        // After max retries, report the error
+        this.retryCount = 0;
+        if (this.onErrorCallback) {
+          this.onErrorCallback(`Transcription failed: ${error.message}`);
+        } else {
+          toast.error('Error connecting to transcription service');
+        }
       }
     } finally {
       this.isProcessingAudio = false;
       
+      // Process next chunk if available
       if (this.audioQueue.length > 0) {
         setTimeout(() => this.processAudioQueue(), 100);
       }
@@ -139,6 +183,7 @@ export class TranscriptionService {
     this.finalTranscript = '';
     this.interimTranscript = '';
     this.audioQueue = [];
+    this.retryCount = 0;
   }
 
   public onTranscriptUpdate(callback: (transcript: string) => void) {
@@ -160,17 +205,35 @@ export class TranscriptionService {
       this.onFeedbackCallback = null;
     }
   }
+  
+  public onError(callback: (error: string) => void) {
+    this.onErrorCallback = callback;
+  }
+  
+  public unsubscribeError(callback: (error: string) => void) {
+    if (this.onErrorCallback === callback) {
+      this.onErrorCallback = null;
+    }
+  }
 
   public updateTranscript(transcript: string) {
-    this.finalTranscript += ' ' + transcript;
-    if (this.onTranscriptUpdateCallback) {
-      this.onTranscriptUpdateCallback(transcript);
+    if (transcript && transcript.trim()) {
+      this.finalTranscript += ' ' + transcript;
+      if (this.onTranscriptUpdateCallback) {
+        this.onTranscriptUpdateCallback(transcript);
+      }
     }
   }
 
   public updateFeedback(feedback: string) {
-    if (this.onFeedbackCallback) {
+    if (feedback && feedback.trim() && this.onFeedbackCallback) {
       this.onFeedbackCallback(feedback);
+    }
+  }
+
+  public reportError(error: string) {
+    if (this.onErrorCallback) {
+      this.onErrorCallback(error);
     }
   }
 

@@ -3,7 +3,7 @@ import React, { useEffect } from 'react';
 import { useSession } from '@/context/SessionContext';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Mic, MicOff, Clock } from 'lucide-react';
+import { Mic, MicOff, Clock, AlertCircle } from 'lucide-react';
 import { useAudioRecorder } from '@/hooks/useAudioRecorder';
 import { toast } from 'sonner';
 
@@ -38,11 +38,15 @@ const AudioRecorder = () => {
         handlePauseResumeSession();
       }
     } else {
-      const started = await startRecording();
-      console.log("Recording started:", started);
-      // If session is paused, resume it
-      if (isPaused) {
-        handlePauseResumeSession();
+      try {
+        await startRecording();
+        // If session is paused, resume it
+        if (isPaused) {
+          handlePauseResumeSession();
+        }
+      } catch (err) {
+        console.error("Failed to start recording:", err);
+        toast.error("Failed to start recording. Please check your microphone access.");
       }
     }
   };
@@ -59,7 +63,7 @@ const AudioRecorder = () => {
       <CardHeader className="pb-2">
         <CardTitle className="flex items-center text-base">
           <span>Audio Recording</span>
-          {isRecording && (
+          {isRecording && !isPaused && (
             <span className="ml-2 h-2 w-2 rounded-full bg-red-500 animate-pulse"></span>
           )}
         </CardTitle>
@@ -81,13 +85,20 @@ const AudioRecorder = () => {
             )}
           </div>
           
+          {error && (
+            <div className="w-full text-sm text-red-500 flex items-center bg-red-50 p-2 rounded">
+              <AlertCircle className="h-4 w-4 mr-1 flex-shrink-0" />
+              <span>{error}</span>
+            </div>
+          )}
+          
           <Button
             onClick={handleRecordingToggle}
-            variant={isRecording ? "destructive" : "default"}
-            className={`w-full ${!isRecording ? 'bg-brand-600 hover:bg-brand-700' : ''}`}
+            variant={isRecording && !isPaused ? "destructive" : "default"}
+            className={`w-full ${!isRecording || isPaused ? 'bg-brand-600 hover:bg-brand-700' : ''}`}
             disabled={!currentSession}
           >
-            {isRecording ? (
+            {isRecording && !isPaused ? (
               <>
                 <MicOff className="h-4 w-4 mr-2" />
                 Pause Recording

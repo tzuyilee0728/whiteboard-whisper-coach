@@ -32,6 +32,8 @@ serve(async (req) => {
     const formData = new FormData();
     formData.append('file', audioBlob, 'audio.webm');
     formData.append('model', 'whisper-1');
+    formData.append('language', 'en');
+    formData.append('response_format', 'json');
 
     console.log("Sending request to OpenAI Whisper API");
     const transcriptionResponse = await fetch('https://api.openai.com/v1/audio/transcriptions', {
@@ -75,8 +77,23 @@ serve(async (req) => {
     }
 
     // Parse the transcription response
-    const transcriptionData = JSON.parse(transcriptionResponseText);
-    console.log("Transcription received:", transcriptionData.text);
+    let transcriptionData;
+    try {
+      transcriptionData = JSON.parse(transcriptionResponseText);
+      console.log("Transcription received:", transcriptionData.text);
+    } catch (e) {
+      console.error("Error parsing transcription response:", e);
+      console.log("Raw response:", transcriptionResponseText);
+      return new Response(
+        JSON.stringify({ error: "Failed to parse transcription response" }),
+        { 
+          headers: { 
+            ...corsHeaders, 
+            'Content-Type': 'application/json' 
+          } 
+        }
+      );
+    }
 
     // Only get feedback if we have text and a section
     let feedback = "";
