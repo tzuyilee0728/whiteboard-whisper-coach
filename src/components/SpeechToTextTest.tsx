@@ -1,48 +1,122 @@
 
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { transcriptionService } from '@/services/transcription';
 import { toast } from 'sonner';
+import { supabase } from '@/integrations/supabase/client';
 
 const SpeechToTextTest = () => {
   const [isListening, setIsListening] = useState(false);
   const [transcription, setTranscription] = useState('');
+  const [isProcessing, setIsProcessing] = useState(false);
+  const mediaRecorderRef = useRef<MediaRecorder | null>(null);
+  const audioChunksRef = useRef<Blob[]>([]);
 
-  const handleStartTest = () => {
+  // Cleanup function for when component unmounts
+  useEffect(() => {
+    return () => {
+      if (mediaRecorderRef.current && mediaRecorderRef.current.state === 'recording') {
+        mediaRecorderRef.current.stop();
+      }
+    };
+  }, []);
+
+  const handleStartTest = async () => {
     try {
-      // Configure Web Speech API for testing
-      transcriptionService.configureAPI({
-        apiKey: 'test-key',
-        apiUrl: 'https://api.test.com',
-        language: 'en-US'
-      });
+      // Request microphone access
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      
+      // Create media recorder
+      const mediaRecorder = new MediaRecorder(stream);
+      mediaRecorderRef.current = mediaRecorder;
+      audioChunksRef.current = [];
 
-      // Subscribe to transcription updates
-      const transcriptionHandler = (text: string) => {
-        setTranscription(text);
-        toast.success('Transcription received: ' + text);
+      // Setup data handler
+      mediaRecorder.ondataavailable = (e) => {
+        if (e.data.size > 0) {
+          audioChunksRef.current.push(e.data);
+        }
       };
 
-      transcriptionService.onTranscriptUpdate(transcriptionHandler);
+      // Setup stop handler
+      mediaRecorder.onstop = async () => {
+        try {
+          setIsProcessing(true);
+          
+          // Combine audio chunks
+          const audioBlob = new Blob(audioChunksRef.current, { type: 'audio/webm' });
+          
+          // Convert to base64
+          const base64Audio = await blobToBase64(audioBlob);
+          
+          // Send to Supabase Edge Function
+          const { data, error } = await supabase.functions.invoke('transcribe-and-analyze', {
+            body: JSON.stringify({
+              audio: base64Audio,
+              section: 'test-section'
+            })
+          });
 
-      // Start recognition
-      const started = transcriptionService.start();
+          if (error) {
+            console.error('Edge function error:', error);
+            toast.error('Transcription error: ' + error.message);
+            return;
+          }
+          
+          if (data?.transcription) {
+            setTranscription(prev => prev ? `${prev}\n${data.transcription}` : data.transcription);
+            toast.success('Transcription received!');
+          }
+          
+          if (data?.feedback) {
+            toast.info('AI Feedback: ' + data.feedback);
+          }
+        } catch (err) {
+          console.error('Error processing audio:', err);
+          toast.error('Error processing audio: ' + (err instanceof Error ? err.message : String(err)));
+        } finally {
+          setIsProcessing(false);
+          setIsListening(false);
+        }
+      };
 
-      if (started) {
-        setIsListening(true);
-        toast.info('Speech recognition started. Speak now!');
-      } else {
-        toast.error('Failed to start speech recognition');
-      }
+      // Start recording
+      mediaRecorder.start();
+      setIsListening(true);
+      toast.info('Speech recognition started. Speak now!');
+      
     } catch (error) {
-      toast.error('Error starting speech recognition: ' + error.message);
+      console.error('Error starting recording:', error);
+      toast.error('Error starting speech recognition: ' + (error instanceof Error ? error.message : String(error)));
     }
   };
 
   const handleStopTest = () => {
-    transcriptionService.stop();
-    setIsListening(false);
-    toast.info('Speech recognition stopped');
+    if (mediaRecorderRef.current && mediaRecorderRef.current.state === 'recording') {
+      mediaRecorderRef.current.stop();
+      
+      // Stop all tracks to release the microphone
+      mediaRecorderRef.current.stream.getTracks().forEach(track => track.stop());
+      
+      toast.info('Processing your speech...');
+    }
+  };
+
+  // Helper function to convert blob to base64
+  const blobToBase64 = (blob: Blob): Promise<string> => {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        if (typeof reader.result === 'string') {
+          const base64 = reader.result.split(',')[1];
+          resolve(base64);
+        } else {
+          reject(new Error('Failed to convert blob to base64'));
+        }
+      };
+      reader.onerror = reject;
+      reader.readAsDataURL(blob);
+    });
   };
 
   return (
@@ -52,24 +126,24 @@ const SpeechToTextTest = () => {
         <div className="flex space-x-4">
           <Button 
             onClick={handleStartTest} 
-            disabled={isListening}
+            disabled={isListening || isProcessing}
             variant="default"
           >
-            Start Listening
+            {isProcessing ? 'Processing...' : 'Start Recording'}
           </Button>
           <Button 
             onClick={handleStopTest} 
-            disabled={!isListening}
+            disabled={!isListening || isProcessing}
             variant="destructive"
           >
-            Stop Listening
+            Stop Recording
           </Button>
         </div>
         
         {transcription && (
           <div className="mt-4 p-3 bg-gray-100 rounded">
             <h3 className="font-medium">Transcription:</h3>
-            <p className="text-sm">{transcription}</p>
+            <p className="text-sm whitespace-pre-wrap">{transcription}</p>
           </div>
         )}
       </div>
