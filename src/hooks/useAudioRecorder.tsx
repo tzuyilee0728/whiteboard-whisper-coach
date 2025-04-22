@@ -1,3 +1,4 @@
+
 import { useState, useRef, useEffect } from 'react';
 import { useSession } from '@/context/SessionContext';
 import { toast } from 'sonner';
@@ -9,7 +10,7 @@ export const useAudioRecorder = () => {
   const [mediaRecorder, setMediaRecorder] = useState<MediaRecorder | null>(null);
   const [error, setError] = useState<string | null>(null);
   const audioChunksRef = useRef<Blob[]>([]);
-  const { isRecording, setIsRecording, currentSession, updateRecordingTime } = useSession();
+  const { isRecording, setIsRecording, currentSession, updateRecordingTime, currentSection } = useSession();
   
   const requestMicrophonePermission = async () => {
     try {
@@ -39,7 +40,7 @@ export const useAudioRecorder = () => {
               const { data, error } = await supabase.functions.invoke('transcribe-and-analyze', {
                 body: JSON.stringify({
                   audio: base64Audio,
-                  section: currentSession.currentSection
+                  section: currentSection
                 })
               });
 
@@ -65,7 +66,7 @@ export const useAudioRecorder = () => {
         recorder.ondataavailable = null;
       };
     }
-  }, [audioStream, isRecording, currentSession]);
+  }, [audioStream, isRecording, currentSession, currentSection]);
 
   const blobToBase64 = (blob: Blob): Promise<string> => {
     return new Promise((resolve, reject) => {

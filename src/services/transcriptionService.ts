@@ -46,6 +46,7 @@ interface TranscriptionAPIConfig {
 export class TranscriptionService {
   private recognitionInstance: SpeechRecognition | null = null;
   private onTranscriptUpdateCallback: ((transcript: string) => void) | null = null;
+  private onFeedbackCallback: ((feedback: string) => void) | null = null;
   private interimTranscript: string = '';
   private finalTranscript: string = '';
   private isRecognitionActive: boolean = false;
@@ -259,6 +260,35 @@ export class TranscriptionService {
 
   public onTranscriptUpdate(callback: (transcript: string) => void) {
     this.onTranscriptUpdateCallback = callback;
+  }
+
+  public unsubscribeTranscriptUpdate(callback: (transcript: string) => void) {
+    if (this.onTranscriptUpdateCallback === callback) {
+      this.onTranscriptUpdateCallback = null;
+    }
+  }
+
+  public onFeedback(callback: (feedback: string) => void) {
+    this.onFeedbackCallback = callback;
+  }
+
+  public unsubscribeFeedback(callback: (feedback: string) => void) {
+    if (this.onFeedbackCallback === callback) {
+      this.onFeedbackCallback = null;
+    }
+  }
+
+  public updateTranscript(transcript: string) {
+    this.finalTranscript += ' ' + transcript;
+    if (this.onTranscriptUpdateCallback) {
+      this.onTranscriptUpdateCallback(transcript);
+    }
+  }
+
+  public updateFeedback(feedback: string) {
+    if (this.onFeedbackCallback) {
+      this.onFeedbackCallback(feedback);
+    }
   }
 
   public getCurrentTranscript(): string {

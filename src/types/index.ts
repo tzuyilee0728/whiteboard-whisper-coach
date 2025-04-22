@@ -1,3 +1,4 @@
+
 export type Category = 'e-commerce' | 'healthcare' | 'finance' | 'social' | 'productivity' | 'random';
 
 export interface Challenge {
@@ -14,6 +15,7 @@ export interface Session {
   duration: number;
   status: 'completed' | 'in-progress' | 'abandoned';
   feedback?: Feedback;
+  currentSection?: WhiteboardSection; // Added this property
 }
 
 export interface Feedback {
