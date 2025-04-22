@@ -1,8 +1,7 @@
-
 import { useState, useRef, useEffect } from 'react';
 import { useSession } from '@/context/SessionContext';
 import { toast } from 'sonner';
-import { transcriptionService } from '@/services/transcriptionService';
+import { transcriptionService } from '@/services/transcription';
 import { supabase } from '@/integrations/supabase/client';
 
 export const useAudioRecorder = () => {

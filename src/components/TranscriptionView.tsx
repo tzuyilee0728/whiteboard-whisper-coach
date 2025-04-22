@@ -1,8 +1,7 @@
-
 import React, { useState, useEffect, useRef } from 'react';
 import { Mic, AlertTriangle } from 'lucide-react';
 import { useSession } from '@/context/SessionContext';
-import { transcriptionService } from '@/services/transcriptionService';
+import { transcriptionService } from '@/services/transcription';
 
 const TranscriptionView = () => {
   const { isRecording, currentSession, currentSection, isPaused } = useSession();
