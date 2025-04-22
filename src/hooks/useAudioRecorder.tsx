@@ -1,8 +1,8 @@
-
 import { useState, useRef, useEffect } from 'react';
 import { useSession } from '@/context/SessionContext';
 import { toast } from 'sonner';
 import { transcriptionService } from '@/services/transcriptionService';
+import { supabase } from '@/integrations/supabase/client';
 
 export const useAudioRecorder = () => {
   const [audioStream, setAudioStream] = useState<MediaStream | null>(null);
@@ -11,7 +11,6 @@ export const useAudioRecorder = () => {
   const audioChunksRef = useRef<Blob[]>([]);
   const { isRecording, setIsRecording, currentSession, updateRecordingTime } = useSession();
   
-  // Request microphone access
   const requestMicrophonePermission = async () => {
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
@@ -25,18 +24,37 @@ export const useAudioRecorder = () => {
     }
   };
 
-  // Initialize media recorder when audio stream is available
   useEffect(() => {
     if (audioStream) {
       const recorder = new MediaRecorder(audioStream);
       
-      recorder.ondataavailable = (e) => {
+      recorder.ondataavailable = async (e) => {
         if (e.data.size > 0) {
           audioChunksRef.current.push(e.data);
           
-          // Send the latest audio chunk to the transcription service
-          if (isRecording) {
-            transcriptionService.processAudioChunk(e.data);
+          const base64Audio = await blobToBase64(e.data);
+          
+          if (isRecording && currentSession) {
+            try {
+              const { data, error } = await supabase.functions.invoke('transcribe-and-analyze', {
+                body: JSON.stringify({
+                  audio: base64Audio,
+                  section: currentSession.currentSection
+                })
+              });
+
+              if (error) throw error;
+              
+              if (data.transcription) {
+                transcriptionService.updateTranscript(data.transcription);
+              }
+              
+              if (data.feedback) {
+                transcriptionService.updateFeedback(data.feedback);
+              }
+            } catch (err) {
+              console.error('Transcription error:', err);
+            }
           }
         }
       };
@@ -47,9 +65,24 @@ export const useAudioRecorder = () => {
         recorder.ondataavailable = null;
       };
     }
-  }, [audioStream, isRecording]);
+  }, [audioStream, isRecording, currentSession]);
 
-  // Start recording function
+  const blobToBase64 = (blob: Blob): Promise<string> => {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        if (typeof reader.result === 'string') {
+          const base64 = reader.result.split(',')[1];
+          resolve(base64);
+        } else {
+          reject(new Error('Failed to convert blob to base64'));
+        }
+      };
+      reader.onerror = reject;
+      reader.readAsDataURL(blob);
+    });
+  };
+
   const startRecording = async () => {
     if (!audioStream) {
       const stream = await requestMicrophonePermission();
@@ -58,12 +91,11 @@ export const useAudioRecorder = () => {
     
     if (mediaRecorder && mediaRecorder.state !== 'recording') {
       audioChunksRef.current = [];
-      mediaRecorder.start(1000); // Capture in 1-second chunks for real-time processing
+      mediaRecorder.start(1000);
       setIsRecording(true);
     }
   };
 
-  // Stop recording function
   const stopRecording = () => {
     if (mediaRecorder && mediaRecorder.state === 'recording') {
       mediaRecorder.stop();
@@ -73,7 +105,6 @@ export const useAudioRecorder = () => {
     return null;
   };
 
-  // Clean up on unmount
   useEffect(() => {
     return () => {
       if (audioStream) {
@@ -82,7 +113,6 @@ export const useAudioRecorder = () => {
     };
   }, [audioStream]);
 
-  // Return the latest audio chunk for real-time processing
   const getLatestAudioChunk = () => {
     if (audioChunksRef.current.length > 0) {
       return audioChunksRef.current[audioChunksRef.current.length - 1];
@@ -90,7 +120,6 @@ export const useAudioRecorder = () => {
     return null;
   };
 
-  // Get all audio chunks
   const getAllAudioChunks = () => {
     return audioChunksRef.current;
   };

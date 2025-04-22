@@ -1,7 +1,7 @@
 
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import OpenAI from "https://esm.sh/openai@4.24.4";
-import Replicate from "https://esm.sh/replicate@0.25.2";
+import { processBase64Chunks } from "./utils.ts";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -17,24 +17,36 @@ serve(async (req) => {
   try {
     const { audio, section } = await req.json();
 
-    // Convert ArrayBuffer to base64
-    const base64Audio = btoa(
-      String.fromCharCode.apply(null, new Uint8Array(audio))
-    );
-
+    // Convert base64 to binary
+    const binaryAudio = processBase64Chunks(audio);
+    
+    // Create blob for OpenAI API
+    const audioBlob = new Blob([binaryAudio], { type: 'audio/webm' });
+    
     // OpenAI Whisper Transcription
     const openai = new OpenAI({
       apiKey: Deno.env.get('OPENAI_API_KEY')
     });
 
-    const transcriptionResponse = await openai.audio.transcriptions.create({
-      file: new File([base64Audio], 'audio.webm', { type: 'audio/webm' }),
-      model: 'whisper-1'
+    const formData = new FormData();
+    formData.append('file', audioBlob, 'audio.webm');
+    formData.append('model', 'whisper-1');
+
+    const transcriptionResponse = await fetch('https://api.openai.com/v1/audio/transcriptions', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${Deno.env.get('OPENAI_API_KEY')}`,
+      },
+      body: formData,
     });
 
-    const transcription = transcriptionResponse.text;
+    if (!transcriptionResponse.ok) {
+      throw new Error('Failed to transcribe audio');
+    }
 
-    // Perplexity AI Feedback
+    const transcription = await transcriptionResponse.json();
+
+    // Perplexity AI Feedback based on transcription
     const perplexityResponse = await fetch('https://api.perplexity.ai/chat/completions', {
       method: 'POST',
       headers: {
@@ -52,7 +64,7 @@ serve(async (req) => {
           },
           {
             role: 'user',
-            content: transcription
+            content: transcription.text
           }
         ],
         max_tokens: 150,
@@ -65,7 +77,7 @@ serve(async (req) => {
 
     return new Response(
       JSON.stringify({ 
-        transcription, 
+        transcription: transcription.text, 
         feedback 
       }), 
       { 

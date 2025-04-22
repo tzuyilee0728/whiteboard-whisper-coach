@@ -1,8 +1,8 @@
 
 import React, { useState, useEffect, useRef } from 'react';
-import { Mic, AlertTriangle, PauseCircle } from 'lucide-react';
+import { Mic, AlertTriangle } from 'lucide-react';
 import { useSession } from '@/context/SessionContext';
-import { supabase } from '@/integrations/supabase/client';
+import { transcriptionService } from '@/services/transcriptionService';
 
 const TranscriptionView = () => {
   const { isRecording, currentSession, currentSection, isPaused } = useSession();
@@ -10,29 +10,25 @@ const TranscriptionView = () => {
   const [feedback, setFeedback] = useState<string[]>([]);
   const transcriptionRef = useRef<HTMLDivElement>(null);
 
-  // Use Supabase edge function to handle transcription and AI analysis
-  const processAudioTranscription = async (audioBlob: Blob) => {
-    try {
-      const { data, error } = await supabase.functions.invoke('transcribe-and-analyze', {
-        body: JSON.stringify({
-          audio: await audioBlob.arrayBuffer(),
-          section: currentSection
-        })
-      });
+  useEffect(() => {
+    // Subscribe to transcription updates
+    const transcriptionHandler = (text: string) => {
+      setTranscription(prev => prev + ' ' + text);
+    };
 
-      if (error) throw error;
+    // Subscribe to feedback updates
+    const feedbackHandler = (newFeedback: string) => {
+      setFeedback(prev => [...prev, newFeedback]);
+    };
 
-      if (data.transcription) {
-        setTranscription(prev => prev + ' ' + data.transcription);
-      }
+    transcriptionService.onTranscriptUpdate(transcriptionHandler);
+    transcriptionService.onFeedback(feedbackHandler);
 
-      if (data.feedback) {
-        setFeedback(prev => [...prev, data.feedback]);
-      }
-    } catch (err) {
-      console.error('Transcription error:', err);
-    }
-  };
+    return () => {
+      transcriptionService.unsubscribeTranscriptUpdate(transcriptionHandler);
+      transcriptionService.unsubscribeFeedback(feedbackHandler);
+    };
+  }, []);
 
   // Auto-scroll to bottom of transcription
   useEffect(() => {
