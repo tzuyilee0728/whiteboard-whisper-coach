@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useRef } from 'react';
 import { Mic, AlertTriangle } from 'lucide-react';
 import { useSession } from '@/context/SessionContext';
@@ -8,7 +7,6 @@ const TranscriptionView = () => {
   const { isRecording, currentSession, currentSection, isPaused } = useSession();
   const [transcription, setTranscription] = useState<string>('');
   const [feedback, setFeedback] = useState<string[]>([]);
-  const [isProcessing, setIsProcessing] = useState(false);
   const transcriptionRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -16,7 +14,6 @@ const TranscriptionView = () => {
     const transcriptionHandler = (text: string) => {
       console.log("Transcription update received:", text);
       setTranscription(prev => prev + ' ' + text);
-      setIsProcessing(false);
     };
 
     // Subscribe to feedback updates
@@ -34,15 +31,6 @@ const TranscriptionView = () => {
     };
   }, []);
 
-  // Set processing state when recording is active
-  useEffect(() => {
-    if (isRecording && !isPaused) {
-      setIsProcessing(true);
-    } else {
-      setIsProcessing(false);
-    }
-  }, [isRecording, isPaused]);
-
   // Auto-scroll to bottom of transcription
   useEffect(() => {
     if (transcriptionRef.current) {
@@ -59,9 +47,6 @@ const TranscriptionView = () => {
           {isRecording && !isPaused && (
             <span className="ml-2 h-2 w-2 rounded-full bg-red-500 animate-pulse"></span>
           )}
-          {isProcessing && (
-            <span className="ml-2 text-xs text-gray-500">(Processing audio...)</span>
-          )}
         </div>
       </div>
       
@@ -70,7 +55,7 @@ const TranscriptionView = () => {
           <div className="space-y-4">
             <div className="border-b pb-2 mb-2">
               <p className="text-sm font-medium">Transcription:</p>
-              <p className="text-sm whitespace-pre-wrap">{transcription || "Waiting for speech..."}</p>
+              <p className="text-sm whitespace-pre-wrap">{transcription}</p>
             </div>
             
             {feedback.length > 0 && (
