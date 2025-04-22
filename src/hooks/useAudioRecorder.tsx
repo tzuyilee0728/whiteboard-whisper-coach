@@ -1,3 +1,4 @@
+
 import { useState, useRef, useEffect } from 'react';
 import { useSession } from '@/context/SessionContext';
 import { toast } from 'sonner';
@@ -9,7 +10,7 @@ export const useAudioRecorder = () => {
   const [mediaRecorder, setMediaRecorder] = useState<MediaRecorder | null>(null);
   const [error, setError] = useState<string | null>(null);
   const audioChunksRef = useRef<Blob[]>([]);
-  const { isRecording, setIsRecording, currentSession, updateRecordingTime, currentSection } = useSession();
+  const { isRecording, setIsRecording, currentSession, updateRecordingTime, currentSection, isPaused } = useSession();
   
   const requestMicrophonePermission = async () => {
     try {
@@ -26,10 +27,13 @@ export const useAudioRecorder = () => {
 
   useEffect(() => {
     if (audioStream) {
-      const recorder = new MediaRecorder(audioStream);
+      // Configure MediaRecorder with specific MIME type for better compatibility
+      const recorder = new MediaRecorder(audioStream, {
+        mimeType: 'audio/webm;codecs=opus'
+      });
       
       recorder.ondataavailable = async (e) => {
-        if (e.data.size > 0) {
+        if (e.data.size > 0 && !isPaused) {
           audioChunksRef.current.push(e.data);
           
           if (isRecording && currentSession) {
@@ -64,13 +68,36 @@ export const useAudioRecorder = () => {
         }
       };
       
+      // Set a shorter timeslice for more frequent chunks (2 seconds)
+      if (isRecording && !isPaused) {
+        recorder.start(2000);
+      }
+      
       setMediaRecorder(recorder);
       
       return () => {
         recorder.ondataavailable = null;
       };
     }
-  }, [audioStream, isRecording, currentSession, currentSection]);
+  }, [audioStream, isRecording, currentSession, currentSection, isPaused]);
+
+  useEffect(() => {
+    // Automatically start recording when session starts
+    if (currentSession && !audioStream) {
+      requestMicrophonePermission();
+    }
+  }, [currentSession]);
+
+  useEffect(() => {
+    // Handle pause/resume based on session state
+    if (mediaRecorder) {
+      if (isPaused && mediaRecorder.state === 'recording') {
+        mediaRecorder.stop();
+      } else if (!isPaused && mediaRecorder.state === 'inactive' && isRecording) {
+        mediaRecorder.start(2000);
+      }
+    }
+  }, [isPaused, mediaRecorder, isRecording]);
 
   const blobToBase64 = (blob: Blob): Promise<string> => {
     return new Promise((resolve, reject) => {
@@ -96,7 +123,7 @@ export const useAudioRecorder = () => {
     
     if (mediaRecorder && mediaRecorder.state !== 'recording') {
       audioChunksRef.current = [];
-      mediaRecorder.start(1000); // Capture audio every second
+      mediaRecorder.start(2000);
       setIsRecording(true);
     }
   };
