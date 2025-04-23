@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useRef } from 'react';
 import { Mic, AlertTriangle } from 'lucide-react';
 import { useSession } from '@/context/SessionContext';
@@ -58,18 +59,20 @@ const TranscriptionView = () => {
               <p className="text-sm whitespace-pre-wrap">{transcription}</p>
             </div>
             
-            {feedback.length > 0 && (
-              <div>
-                <p className="text-sm font-medium">AI Feedback:</p>
-                <div className="space-y-2 mt-2">
-                  {feedback.map((item, idx) => (
-                    <div key={idx} className="bg-blue-50 p-2 rounded text-sm">
-                      {item}
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
+            <div>
+              {feedback.length > 0 && (
+                <>
+                  <p className="text-sm font-medium">AI Feedback:</p>
+                  <div className="space-y-2 mt-2">
+                    {feedback.map((item, idx) => (
+                      <div key={idx} className="bg-blue-50 p-2 rounded text-sm">
+                        {item}
+                      </div>
+                    ))}
+                  </div>
+                </>
+              )}
+            </div>
           </div>
         ) : (
           <div className="h-full flex flex-col items-center justify-center text-center text-gray-500">
@@ -84,3 +87,4 @@ const TranscriptionView = () => {
 };
 
 export default TranscriptionView;
+
