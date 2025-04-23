@@ -1,4 +1,3 @@
-
 import { useState, useRef, useEffect } from 'react';
 import { useSession } from '@/context/SessionContext';
 import { transcriptionService } from '@/services/transcription';
@@ -53,7 +52,7 @@ export const useAudioRecorder = () => {
               }
               
               if (data?.feedback) {
-                console.log('Received feedback:', data.feedback);
+                console.log('Received feedback from API:', data.feedback);
                 transcriptionService.updateFeedback(data.feedback);
               }
             } catch (err) {

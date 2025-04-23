@@ -19,8 +19,10 @@ const TranscriptionView = () => {
 
     // Subscribe to feedback updates
     const feedbackHandler = (newFeedback: string) => {
-      console.log("Feedback received:", newFeedback);
-      setFeedback(prev => [...prev, newFeedback]);
+      console.log("Feedback received in component:", newFeedback);
+      if (newFeedback && newFeedback.trim() !== '') {
+        setFeedback(prev => [...prev, newFeedback]);
+      }
     };
 
     transcriptionService.onTranscriptUpdate(transcriptionHandler);
@@ -40,7 +42,9 @@ const TranscriptionView = () => {
   }, [transcription, feedback]);
 
   // Debug what feedback is available
-  console.log("Current feedback state:", feedback);
+  useEffect(() => {
+    console.log("Current feedback state:", feedback);
+  }, [feedback]);
 
   return (
     <div className="h-full flex flex-col bg-white rounded-lg border shadow-sm p-4">
@@ -63,20 +67,18 @@ const TranscriptionView = () => {
             </div>
             
             <div>
-              {feedback.length > 0 ? (
-                <>
-                  <p className="text-sm font-medium">AI Feedback:</p>
-                  <div className="space-y-2 mt-2">
-                    {feedback.map((item, idx) => (
-                      <div key={idx} className="bg-blue-50 p-2 rounded text-sm">
-                        {item}
-                      </div>
-                    ))}
-                  </div>
-                </>
-              ) : (
-                <p className="text-sm text-gray-500">No AI feedback available yet</p>
-              )}
+              <p className="text-sm font-medium">AI Feedback:</p>
+              <div className="space-y-2 mt-2">
+                {feedback.length > 0 ? (
+                  feedback.map((item, idx) => (
+                    <div key={idx} className="bg-blue-50 p-2 rounded text-sm">
+                      {item}
+                    </div>
+                  ))
+                ) : (
+                  <p className="text-sm text-gray-500">No AI feedback available yet</p>
+                )}
+              </div>
             </div>
           </div>
         ) : (
