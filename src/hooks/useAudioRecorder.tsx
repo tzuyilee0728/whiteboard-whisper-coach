@@ -1,4 +1,3 @@
-
 import { useState, useRef, useEffect } from 'react';
 import { useSession } from '@/context/SessionContext';
 import { toast } from 'sonner';
@@ -11,6 +10,11 @@ export const useAudioRecorder = () => {
   const [error, setError] = useState<string | null>(null);
   const audioChunksRef = useRef<Blob[]>([]);
   const { isRecording, setIsRecording, currentSession, updateRecordingTime, currentSection, isPaused } = useSession();
+
+  const getAccessToken = async () => {
+    const { data } = await supabase.auth.getSession();
+    return data?.session?.access_token || "";
+  };
 
   const requestMicrophonePermission = async () => {
     try {
@@ -58,19 +62,18 @@ export const useAudioRecorder = () => {
 
             if (isRecording && currentSession) {
               try {
-                // Convert blob chunk to base64
                 const base64Audio = await blobToBase64(e.data);
 
-                // Use direct fetch to the Supabase function URL instead of client
                 console.log('Sending audio chunk to edge function...');
                 
                 try {
-                  // Use direct fetch for more reliable error reporting
+                  const accessToken = await getAccessToken();
+                  
                   const response = await fetch('https://xqbazrlsytdhzfitmtcc.functions.supabase.co/transcribe-and-analyze', {
                     method: 'POST',
                     headers: {
                       'Content-Type': 'application/json',
-                      'Authorization': `Bearer ${supabase.auth.session()?.access_token || ""}`,
+                      'Authorization': `Bearer ${accessToken}`,
                     },
                     body: JSON.stringify({
                       audio: base64Audio,
@@ -88,7 +91,6 @@ export const useAudioRecorder = () => {
 
                   if (data?.transcription) {
                     console.log('Received transcription:', data.transcription);
-                    // Update transcription service with incremental transcript
                     transcriptionService.updateTranscript(data.transcription);
                   }
 
@@ -119,7 +121,6 @@ export const useAudioRecorder = () => {
           setError('Recording error occurred. Please try again.');
         };
 
-        // Start recording if flag is true and not paused
         if (isRecording && !isPaused && recorder.state === 'inactive') {
           recorder.start(2000);
           console.log('MediaRecorder started with 2s timeslice');
@@ -140,14 +141,12 @@ export const useAudioRecorder = () => {
   }, [audioStream, isRecording, currentSession, currentSection, isPaused]);
 
   useEffect(() => {
-    // Automatically request mic and set stream when session starts
     if (currentSession && !audioStream) {
       requestMicrophonePermission();
     }
   }, [currentSession]);
 
   useEffect(() => {
-    // Handle pause/resume mediaRecorder state change
     if (mediaRecorder) {
       try {
         if (isPaused && mediaRecorder.state === 'recording') {
