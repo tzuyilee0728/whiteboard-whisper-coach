@@ -39,6 +39,9 @@ const TranscriptionView = () => {
     }
   }, [transcription, feedback]);
 
+  // Debug what feedback is available
+  console.log("Current feedback state:", feedback);
+
   return (
     <div className="h-full flex flex-col bg-white rounded-lg border shadow-sm p-4">
       <div className="flex items-center justify-between mb-4">
@@ -60,7 +63,7 @@ const TranscriptionView = () => {
             </div>
             
             <div>
-              {feedback.length > 0 && (
+              {feedback.length > 0 ? (
                 <>
                   <p className="text-sm font-medium">AI Feedback:</p>
                   <div className="space-y-2 mt-2">
@@ -71,6 +74,8 @@ const TranscriptionView = () => {
                     ))}
                   </div>
                 </>
+              ) : (
+                <p className="text-sm text-gray-500">No AI feedback available yet</p>
               )}
             </div>
           </div>
@@ -87,4 +92,3 @@ const TranscriptionView = () => {
 };
 
 export default TranscriptionView;
-

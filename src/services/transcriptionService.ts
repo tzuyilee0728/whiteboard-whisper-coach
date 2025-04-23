@@ -97,12 +97,12 @@ export class TranscriptionService {
     this.recognitionInstance.onerror = (event) => {
       console.error('Speech recognition error:', event.error);
       if (event.error === 'not-allowed') {
-        toast.error('Microphone access denied. Please allow microphone access.');
+        console.error('Microphone access denied');
       } else if (event.error === 'network') {
         // Silently handle network errors, which are common in development
         console.log('Network error in speech recognition - this is normal in development');
       } else {
-        toast.error(`Speech recognition error: ${event.error}`);
+        console.error(`Speech recognition error: ${event.error}`);
       }
     };
   }
@@ -186,7 +186,7 @@ export class TranscriptionService {
       console.error('Error processing audio for transcription:', error);
       // Only show one toast error to avoid spamming
       if (this.audioQueue.length === 0) {
-        toast.error('Error connecting to transcription API');
+        console.error('Error connecting to transcription API');
       }
     } finally {
       this.isProcessingAudio = false;
@@ -226,7 +226,6 @@ export class TranscriptionService {
         return true; // Already running is considered a success
       } catch (error) {
         console.error('Error starting speech recognition:', error);
-        toast.error('Failed to start speech recognition.');
         return false;
       }
     }
@@ -270,6 +269,7 @@ export class TranscriptionService {
 
   public onFeedback(callback: (feedback: string) => void) {
     this.onFeedbackCallback = callback;
+    console.log("Feedback callback registered");
   }
 
   public unsubscribeFeedback(callback: (feedback: string) => void) {
@@ -279,6 +279,7 @@ export class TranscriptionService {
   }
 
   public updateTranscript(transcript: string) {
+    console.log("updateTranscript called with:", transcript);
     this.finalTranscript += ' ' + transcript;
     if (this.onTranscriptUpdateCallback) {
       this.onTranscriptUpdateCallback(transcript);
@@ -286,8 +287,11 @@ export class TranscriptionService {
   }
 
   public updateFeedback(feedback: string) {
+    console.log("updateFeedback called with:", feedback);
     if (this.onFeedbackCallback) {
       this.onFeedbackCallback(feedback);
+    } else {
+      console.warn("No feedback callback registered");
     }
   }
 
