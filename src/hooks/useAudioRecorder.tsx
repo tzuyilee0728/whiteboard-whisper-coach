@@ -1,55 +1,39 @@
+
 import { useState, useRef, useEffect } from 'react';
 import { useSession } from '@/context/SessionContext';
 import { toast } from 'sonner';
 import { transcriptionService } from '@/services/transcription';
 import { supabase } from '@/integrations/supabase/client';
+import { useAudioStream } from './useAudioStream';
+import { blobToBase64, getAudioMimeType } from '@/utils/audioUtils';
 
 export const useAudioRecorder = () => {
-  const [audioStream, setAudioStream] = useState<MediaStream | null>(null);
   const [mediaRecorder, setMediaRecorder] = useState<MediaRecorder | null>(null);
-  const [error, setError] = useState<string | null>(null);
   const audioChunksRef = useRef<Blob[]>([]);
-  const { isRecording, setIsRecording, currentSession, updateRecordingTime, currentSection, isPaused } = useSession();
+  
+  const { 
+    isRecording, 
+    setIsRecording, 
+    currentSession, 
+    updateRecordingTime, 
+    currentSection, 
+    isPaused 
+  } = useSession();
+
+  const { 
+    audioStream, 
+    requestMicrophonePermission, 
+    error: streamError 
+  } = useAudioStream();
 
   const getAccessToken = async () => {
     const { data } = await supabase.auth.getSession();
     return data?.session?.access_token || "";
   };
 
-  const requestMicrophonePermission = async () => {
-    try {
-      const stream = await navigator.mediaDevices.getUserMedia({
-        audio: {
-          echoCancellation: true,
-          noiseSuppression: true,
-          autoGainControl: true,
-        },
-      });
-      setAudioStream(stream);
-      setError(null);
-      return stream;
-    } catch (err) {
-      const errorMessage = 'Microphone permission denied. Please allow microphone access.';
-      setError(errorMessage);
-      toast.error(errorMessage);
-      return null;
-    }
-  };
-
   useEffect(() => {
     if (audioStream) {
-      let mimeType = 'audio/webm';
-
-      if (MediaRecorder.isTypeSupported('audio/webm;codecs=opus')) {
-        mimeType = 'audio/webm;codecs=opus';
-      } else if (MediaRecorder.isTypeSupported('audio/webm')) {
-        mimeType = 'audio/webm';
-      } else if (MediaRecorder.isTypeSupported('audio/mp4')) {
-        mimeType = 'audio/mp4';
-      } else if (MediaRecorder.isTypeSupported('audio/ogg;codecs=opus')) {
-        mimeType = 'audio/ogg;codecs=opus';
-      }
-
+      const mimeType = getAudioMimeType();
       console.log(`Using MediaRecorder with MIME type: ${mimeType}`);
 
       try {
@@ -63,7 +47,6 @@ export const useAudioRecorder = () => {
             if (isRecording && currentSession) {
               try {
                 const base64Audio = await blobToBase64(e.data);
-
                 console.log('Sending audio chunk to edge function...');
                 
                 try {
@@ -107,7 +90,6 @@ export const useAudioRecorder = () => {
                   console.error('Error calling edge function:', err);
                   transcriptionService.reportError(`Failed to call edge function: ${err.message || 'Unknown error'}`);
                 }
-                
               } catch (err: any) {
                 console.error('Transcription error:', err);
                 transcriptionService.reportError(`Failed to process audio: ${err.message || 'Unknown error'}`);
@@ -118,7 +100,7 @@ export const useAudioRecorder = () => {
 
         recorder.onerror = (event) => {
           console.error('MediaRecorder error:', event);
-          setError('Recording error occurred. Please try again.');
+          toast.error('Recording error occurred. Please try again.');
         };
 
         if (isRecording && !isPaused && recorder.state === 'inactive') {
@@ -134,7 +116,7 @@ export const useAudioRecorder = () => {
         };
       } catch (err: any) {
         console.error('Error creating MediaRecorder:', err);
-        setError(`Could not start recording: ${err.message || 'Unknown error'}`);
+        toast.error(`Could not start recording: ${err.message || 'Unknown error'}`);
         return () => {};
       }
     }
@@ -162,22 +144,6 @@ export const useAudioRecorder = () => {
     }
   }, [isPaused, mediaRecorder, isRecording]);
 
-  const blobToBase64 = (blob: Blob): Promise<string> => {
-    return new Promise((resolve, reject) => {
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        if (typeof reader.result === 'string') {
-          const base64 = reader.result.split(',')[1];
-          resolve(base64);
-        } else {
-          reject(new Error('Failed to convert blob to base64'));
-        }
-      };
-      reader.onerror = reject;
-      reader.readAsDataURL(blob);
-    });
-  };
-
   const startRecording = async () => {
     if (!audioStream) {
       const stream = await requestMicrophonePermission();
@@ -195,7 +161,7 @@ export const useAudioRecorder = () => {
         return true;
       } catch (err: any) {
         console.error('Error starting recording:', err);
-        setError(`Could not start recording: ${err.message || 'Unknown error'}`);
+        toast.error(`Could not start recording: ${err.message || 'Unknown error'}`);
         return false;
       }
     }
@@ -211,20 +177,12 @@ export const useAudioRecorder = () => {
         return new Blob(audioChunksRef.current, { type: mediaRecorder.mimeType });
       } catch (err: any) {
         console.error('Error stopping recording:', err);
-        setError(`Could not stop recording: ${err.message || 'Unknown error'}`);
+        toast.error(`Could not stop recording: ${err.message || 'Unknown error'}`);
         return null;
       }
     }
     return null;
   };
-
-  useEffect(() => {
-    return () => {
-      if (audioStream) {
-        audioStream.getTracks().forEach((track) => track.stop());
-      }
-    };
-  }, [audioStream]);
 
   const getLatestAudioChunk = () => {
     if (audioChunksRef.current.length > 0) {
@@ -241,7 +199,7 @@ export const useAudioRecorder = () => {
     startRecording,
     stopRecording,
     isRecording,
-    error,
+    error: streamError,
     getLatestAudioChunk,
     getAllAudioChunks,
     audioChunksRef,
