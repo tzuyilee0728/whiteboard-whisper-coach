@@ -3,6 +3,7 @@ import { useState, useRef, useEffect } from 'react';
 import { useSession } from '@/context/SessionContext';
 import { toast } from 'sonner';
 import { transcriptionService } from '@/services/transcription';
+import { supabase } from '@/integrations/supabase/client';
 
 export const useAudioRecorder = () => {
   const [audioStream, setAudioStream] = useState<MediaStream | null>(null);
@@ -60,35 +61,20 @@ export const useAudioRecorder = () => {
                 // Convert blob chunk to base64
                 const base64Audio = await blobToBase64(e.data);
 
-                // Send to Supabase edge function
-                console.log('Sending audio chunk to edge function...');
-                const { data, error: supabaseError } = await fetch(
-                  'https://xqbazrlsytdhzfitmtcc.functions.supabase.co/transcribe-and-analyze',
+                // Use Supabase client to invoke the edge function
+                console.log('Sending audio chunk to edge function via Supabase client...');
+                const { data, error: supabaseError } = await supabase.functions.invoke(
+                  'transcribe-and-analyze',
                   {
-                    method: 'POST',
-                    headers: {
-                      'Content-Type': 'application/json',
-                      Authorization: `Bearer ${process.env.SUPABASE_ANON_KEY}`, // Use env or supabase client if possible, or remove if not needed
-                    },
                     body: JSON.stringify({
                       audio: base64Audio,
                       section: currentSection,
                     }),
                   }
-                ).then(async (res) => {
-                  try {
-                    return await res.json();
-                  } catch (e) {
-                    console.error('Error parsing edge function response as JSON', e);
-                    return {};
-                  }
-                }).catch((fetchError) => {
-                  console.error('Error from edge function fetch', fetchError);
-                  return { error: fetchError.message };
-                });
+                );
 
                 if (supabaseError) {
-                  console.error('Edge function error:', supabaseError);
+                  console.error('Supabase function invocation error:', supabaseError);
                   transcriptionService.reportError(`Connection error: ${supabaseError.message}`);
                   throw supabaseError;
                 }
@@ -249,4 +235,3 @@ export const useAudioRecorder = () => {
     audioChunksRef,
   };
 };
-
