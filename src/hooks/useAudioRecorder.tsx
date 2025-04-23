@@ -1,6 +1,5 @@
 import { useState, useRef, useEffect } from 'react';
 import { useSession } from '@/context/SessionContext';
-import { toast } from 'sonner';
 import { transcriptionService } from '@/services/transcription';
 import { supabase } from '@/integrations/supabase/client';
 
@@ -19,7 +18,6 @@ export const useAudioRecorder = () => {
       return stream;
     } catch (err) {
       setError('Microphone permission denied. Please allow microphone access.');
-      toast.error('Microphone permission denied. Please allow microphone access.');
       return null;
     }
   };

@@ -2,7 +2,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { transcriptionService } from '@/services/transcription';
-import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
 import { AlertCircle } from 'lucide-react';
 
@@ -63,31 +62,25 @@ const SpeechToTextTest = () => {
           if (supabaseError) {
             console.error('Edge function error:', supabaseError);
             setError(`Edge function error: ${supabaseError.message || 'Unknown error'}`);
-            toast.error('Transcription error: ' + (supabaseError.message || 'Unknown error'));
             return;
           }
           
           if (data?.error) {
             console.error('Transcription API error:', data.error);
             setError(`Transcription API error: ${data.error}`);
-            toast.error('Transcription error: ' + data.error);
             return;
           }
 
           if (data?.transcription) {
             setTranscription(prev => prev ? `${prev}\n${data.transcription}` : data.transcription);
-            toast.success('Transcription received!');
-          } else {
-            toast.warning('No transcription received');
           }
           
           if (data?.feedback) {
-            toast.info('AI Feedback: ' + data.feedback);
+            console.log('AI Feedback:', data.feedback);
           }
         } catch (err) {
           console.error('Error processing audio:', err);
           setError(`Error processing audio: ${err instanceof Error ? err.message : String(err)}`);
-          toast.error('Error processing audio: ' + (err instanceof Error ? err.message : String(err)));
         } finally {
           setIsProcessing(false);
           setIsListening(false);
@@ -102,19 +95,9 @@ const SpeechToTextTest = () => {
       // Start recording
       mediaRecorder.start();
       setIsListening(true);
-      toast.info('Speech recognition started. Speak now!');
-      
     } catch (error) {
       console.error('Error starting recording:', error);
       setError(`Error starting recording: ${error instanceof Error ? error.message : String(error)}`);
-      toast.error('Error starting speech recognition: ' + (error instanceof Error ? error.message : String(error)));
-    }
-  };
-
-  const handleStopTest = () => {
-    if (mediaRecorderRef.current && mediaRecorderRef.current.state === 'recording') {
-      mediaRecorderRef.current.stop();
-      toast.info('Processing your speech...');
     }
   };
 
@@ -148,7 +131,11 @@ const SpeechToTextTest = () => {
             {isProcessing ? 'Processing...' : 'Start Recording'}
           </Button>
           <Button 
-            onClick={handleStopTest} 
+            onClick={() => {
+              if (mediaRecorderRef.current && mediaRecorderRef.current.state === 'recording') {
+                mediaRecorderRef.current.stop();
+              }
+            }} 
             disabled={!isListening || isProcessing}
             variant="destructive"
           >
@@ -162,12 +149,6 @@ const SpeechToTextTest = () => {
             <div>
               <p className="font-medium">Transcription Error</p>
               <p className="text-sm">{error}</p>
-              {error.includes('quota') && (
-                <p className="mt-2 text-sm">
-                  <strong>Note:</strong> Your OpenAI API key appears to have reached its usage limit.
-                  Please check your OpenAI account billing details or replace your API key.
-                </p>
-              )}
             </div>
           </div>
         )}
