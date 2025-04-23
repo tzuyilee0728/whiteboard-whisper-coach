@@ -17,9 +17,9 @@ const TranscriptionView = () => {
       setTranscription(prev => prev + ' ' + text);
     };
 
-    // Subscribe to feedback updates
+    // Subscribe to feedback updates - this is key
     const feedbackHandler = (newFeedback: string) => {
-      console.log("Feedback received:", newFeedback);
+      console.log("Feedback received in component:", newFeedback);
       setFeedback(prev => [...prev, newFeedback]);
     };
 
