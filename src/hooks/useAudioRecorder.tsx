@@ -1,4 +1,5 @@
 
+import React, { useEffect } from 'react';
 import { useSession } from '@/context/SessionContext';
 import { toast } from 'sonner';
 import { useAudioStream } from './useAudioStream';
@@ -31,11 +32,11 @@ export const useAudioRecorder = () => {
   });
 
   // Request permission automatically if session just started and no stream yet
-  React.useEffect(() => {
+  useEffect(() => {
     if (currentSession && !audioStream) {
       requestMicrophonePermission();
     }
-  }, [currentSession]);
+  }, [currentSession, audioStream, requestMicrophonePermission]);
 
   return {
     ...mediaRecorderApi,
