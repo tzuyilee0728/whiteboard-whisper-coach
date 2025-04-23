@@ -3,7 +3,6 @@ import { useState, useRef, useEffect } from 'react';
 import { useSession } from '@/context/SessionContext';
 import { toast } from 'sonner';
 import { transcriptionService } from '@/services/transcription';
-import { supabase } from '@/integrations/supabase/client';
 
 export const useAudioRecorder = () => {
   const [audioStream, setAudioStream] = useState<MediaStream | null>(null);
@@ -11,15 +10,15 @@ export const useAudioRecorder = () => {
   const [error, setError] = useState<string | null>(null);
   const audioChunksRef = useRef<Blob[]>([]);
   const { isRecording, setIsRecording, currentSession, updateRecordingTime, currentSection, isPaused } = useSession();
-  
+
   const requestMicrophonePermission = async () => {
     try {
-      const stream = await navigator.mediaDevices.getUserMedia({ 
+      const stream = await navigator.mediaDevices.getUserMedia({
         audio: {
           echoCancellation: true,
           noiseSuppression: true,
-          autoGainControl: true
-        } 
+          autoGainControl: true,
+        },
       });
       setAudioStream(stream);
       setError(null);
@@ -34,10 +33,8 @@ export const useAudioRecorder = () => {
 
   useEffect(() => {
     if (audioStream) {
-      // Try different MIME types with fallbacks for better browser compatibility
       let mimeType = 'audio/webm';
-      
-      // Check if browser supports audio/webm
+
       if (MediaRecorder.isTypeSupported('audio/webm;codecs=opus')) {
         mimeType = 'audio/webm;codecs=opus';
       } else if (MediaRecorder.isTypeSupported('audio/webm')) {
@@ -47,31 +44,47 @@ export const useAudioRecorder = () => {
       } else if (MediaRecorder.isTypeSupported('audio/ogg;codecs=opus')) {
         mimeType = 'audio/ogg;codecs=opus';
       }
-      
+
       console.log(`Using MediaRecorder with MIME type: ${mimeType}`);
-      
+
       try {
-        // Configure MediaRecorder with selected MIME type
-        const recorder = new MediaRecorder(audioStream, {
-          mimeType: mimeType
-        });
-        
+        const recorder = new MediaRecorder(audioStream, { mimeType });
+
         recorder.ondataavailable = async (e) => {
           if (e.data.size > 0 && !isPaused) {
             console.log(`Audio chunk received: ${e.data.size} bytes, type: ${e.data.type}`);
             audioChunksRef.current.push(e.data);
-            
+
             if (isRecording && currentSession) {
               try {
+                // Convert blob chunk to base64
                 const base64Audio = await blobToBase64(e.data);
-                
-                // Send to edge function
+
+                // Send to Supabase edge function
                 console.log('Sending audio chunk to edge function...');
-                const { data, error: supabaseError } = await supabase.functions.invoke('transcribe-and-analyze', {
-                  body: JSON.stringify({
-                    audio: base64Audio,
-                    section: currentSection
-                  })
+                const { data, error: supabaseError } = await fetch(
+                  'https://xqbazrlsytdhzfitmtcc.functions.supabase.co/transcribe-and-analyze',
+                  {
+                    method: 'POST',
+                    headers: {
+                      'Content-Type': 'application/json',
+                      Authorization: `Bearer ${process.env.SUPABASE_ANON_KEY}`, // Use env or supabase client if possible, or remove if not needed
+                    },
+                    body: JSON.stringify({
+                      audio: base64Audio,
+                      section: currentSection,
+                    }),
+                  }
+                ).then(async (res) => {
+                  try {
+                    return await res.json();
+                  } catch (e) {
+                    console.error('Error parsing edge function response as JSON', e);
+                    return {};
+                  }
+                }).catch((fetchError) => {
+                  console.error('Error from edge function fetch', fetchError);
+                  return { error: fetchError.message };
                 });
 
                 if (supabaseError) {
@@ -79,47 +92,47 @@ export const useAudioRecorder = () => {
                   transcriptionService.reportError(`Connection error: ${supabaseError.message}`);
                   throw supabaseError;
                 }
-                
+
                 if (data?.transcription) {
                   console.log('Received transcription:', data.transcription);
+                  // Update transcription service with incremental transcript
                   transcriptionService.updateTranscript(data.transcription);
                 }
-                
+
                 if (data?.feedback) {
                   console.log('Received feedback:', data.feedback);
                   transcriptionService.updateFeedback(data.feedback);
                 }
-                
+
                 if (data?.error) {
                   transcriptionService.reportError(data.error);
                 }
-                
-              } catch (err) {
+              } catch (err: any) {
                 console.error('Transcription error:', err);
                 transcriptionService.reportError(`Failed to process audio: ${err.message || 'Unknown error'}`);
               }
             }
           }
         };
-        
+
         recorder.onerror = (event) => {
           console.error('MediaRecorder error:', event);
           setError('Recording error occurred. Please try again.');
         };
-        
-        // Set a shorter timeslice for more frequent chunks (2 seconds)
-        if (isRecording && !isPaused) {
+
+        // Start recording if flag is true and not paused
+        if (isRecording && !isPaused && recorder.state === 'inactive') {
           recorder.start(2000);
           console.log('MediaRecorder started with 2s timeslice');
         }
-        
+
         setMediaRecorder(recorder);
-        
+
         return () => {
           recorder.ondataavailable = null;
           recorder.onerror = null;
         };
-      } catch (err) {
+      } catch (err: any) {
         console.error('Error creating MediaRecorder:', err);
         setError(`Could not start recording: ${err.message || 'Unknown error'}`);
         return () => {};
@@ -128,14 +141,14 @@ export const useAudioRecorder = () => {
   }, [audioStream, isRecording, currentSession, currentSection, isPaused]);
 
   useEffect(() => {
-    // Automatically start recording when session starts
+    // Automatically request mic and set stream when session starts
     if (currentSession && !audioStream) {
       requestMicrophonePermission();
     }
   }, [currentSession]);
 
   useEffect(() => {
-    // Handle pause/resume based on session state
+    // Handle pause/resume mediaRecorder state change
     if (mediaRecorder) {
       try {
         if (isPaused && mediaRecorder.state === 'recording') {
@@ -172,7 +185,7 @@ export const useAudioRecorder = () => {
       const stream = await requestMicrophonePermission();
       if (!stream) return false;
     }
-    
+
     if (mediaRecorder) {
       try {
         if (mediaRecorder.state !== 'recording') {
@@ -182,7 +195,7 @@ export const useAudioRecorder = () => {
           console.log('Recording started');
         }
         return true;
-      } catch (err) {
+      } catch (err: any) {
         console.error('Error starting recording:', err);
         setError(`Could not start recording: ${err.message || 'Unknown error'}`);
         return false;
@@ -198,7 +211,7 @@ export const useAudioRecorder = () => {
         setIsRecording(false);
         console.log('Recording stopped');
         return new Blob(audioChunksRef.current, { type: mediaRecorder.mimeType });
-      } catch (err) {
+      } catch (err: any) {
         console.error('Error stopping recording:', err);
         setError(`Could not stop recording: ${err.message || 'Unknown error'}`);
         return null;
@@ -210,7 +223,7 @@ export const useAudioRecorder = () => {
   useEffect(() => {
     return () => {
       if (audioStream) {
-        audioStream.getTracks().forEach(track => track.stop());
+        audioStream.getTracks().forEach((track) => track.stop());
       }
     };
   }, [audioStream]);
@@ -233,6 +246,7 @@ export const useAudioRecorder = () => {
     error,
     getLatestAudioChunk,
     getAllAudioChunks,
-    audioChunksRef
+    audioChunksRef,
   };
 };
+
