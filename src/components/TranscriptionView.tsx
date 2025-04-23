@@ -39,9 +39,6 @@ const TranscriptionView = () => {
     }
   }, [transcription, feedback]);
 
-  // Debug what feedback is available
-  console.log("Current feedback state:", feedback);
-
   return (
     <div className="h-full flex flex-col bg-white rounded-lg border shadow-sm p-4">
       <div className="flex items-center justify-between mb-4">
@@ -63,19 +60,17 @@ const TranscriptionView = () => {
             </div>
             
             <div>
+              <p className="text-sm font-medium">AI Feedback:</p>
               {feedback.length > 0 ? (
-                <>
-                  <p className="text-sm font-medium">AI Feedback:</p>
-                  <div className="space-y-2 mt-2">
-                    {feedback.map((item, idx) => (
-                      <div key={idx} className="bg-blue-50 p-2 rounded text-sm">
-                        {item}
-                      </div>
-                    ))}
-                  </div>
-                </>
+                <div className="space-y-2 mt-2">
+                  {feedback.map((item, idx) => (
+                    <div key={idx} className="bg-blue-50 p-2 rounded text-sm">
+                      {item}
+                    </div>
+                  ))}
+                </div>
               ) : (
-                <p className="text-sm text-gray-500">No AI feedback available yet</p>
+                <p className="text-sm text-gray-500 mt-2">No AI feedback available yet</p>
               )}
             </div>
           </div>
