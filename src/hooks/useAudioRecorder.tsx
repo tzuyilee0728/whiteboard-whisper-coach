@@ -63,36 +63,45 @@ export const useAudioRecorder = () => {
 
                 // Use Supabase client to invoke the edge function
                 console.log('Sending audio chunk to edge function via Supabase client...');
-                const { data, error: supabaseError } = await supabase.functions.invoke(
-                  'transcribe-and-analyze',
-                  {
-                    body: JSON.stringify({
-                      audio: base64Audio,
-                      section: currentSection,
-                    }),
+                
+                try {
+                  const { data, error: supabaseError } = await supabase.functions.invoke(
+                    'transcribe-and-analyze',
+                    {
+                      body: JSON.stringify({
+                        audio: base64Audio,
+                        section: currentSection,
+                      }),
+                    }
+                  );
+                  
+                  console.log('Edge function response:', data, 'Error:', supabaseError);
+
+                  if (supabaseError) {
+                    console.error('Supabase function invocation error:', supabaseError);
+                    transcriptionService.reportError(`Connection error: ${supabaseError.message}`);
+                    throw supabaseError;
                   }
-                );
 
-                if (supabaseError) {
-                  console.error('Supabase function invocation error:', supabaseError);
-                  transcriptionService.reportError(`Connection error: ${supabaseError.message}`);
-                  throw supabaseError;
-                }
+                  if (data?.transcription) {
+                    console.log('Received transcription:', data.transcription);
+                    // Update transcription service with incremental transcript
+                    transcriptionService.updateTranscript(data.transcription);
+                  }
 
-                if (data?.transcription) {
-                  console.log('Received transcription:', data.transcription);
-                  // Update transcription service with incremental transcript
-                  transcriptionService.updateTranscript(data.transcription);
-                }
+                  if (data?.feedback) {
+                    console.log('Received feedback:', data.feedback);
+                    transcriptionService.updateFeedback(data.feedback);
+                  }
 
-                if (data?.feedback) {
-                  console.log('Received feedback:', data.feedback);
-                  transcriptionService.updateFeedback(data.feedback);
+                  if (data?.error) {
+                    transcriptionService.reportError(data.error);
+                  }
+                } catch (err: any) {
+                  console.error('Supabase function call error:', err);
+                  transcriptionService.reportError(`Failed to call edge function: ${err.message || 'Unknown error'}`);
                 }
-
-                if (data?.error) {
-                  transcriptionService.reportError(data.error);
-                }
+                
               } catch (err: any) {
                 console.error('Transcription error:', err);
                 transcriptionService.reportError(`Failed to process audio: ${err.message || 'Unknown error'}`);
