@@ -61,27 +61,30 @@ export const useAudioRecorder = () => {
                 // Convert blob chunk to base64
                 const base64Audio = await blobToBase64(e.data);
 
-                // Use Supabase client to invoke the edge function
-                console.log('Sending audio chunk to edge function via Supabase client...');
+                // Use direct fetch to the Supabase function URL instead of client
+                console.log('Sending audio chunk to edge function...');
                 
                 try {
-                  const { data, error: supabaseError } = await supabase.functions.invoke(
-                    'transcribe-and-analyze',
-                    {
-                      body: JSON.stringify({
-                        audio: base64Audio,
-                        section: currentSection,
-                      }),
-                    }
-                  );
-                  
-                  console.log('Edge function response:', data, 'Error:', supabaseError);
+                  // Use direct fetch for more reliable error reporting
+                  const response = await fetch('https://xqbazrlsytdhzfitmtcc.functions.supabase.co/transcribe-and-analyze', {
+                    method: 'POST',
+                    headers: {
+                      'Content-Type': 'application/json',
+                      'Authorization': `Bearer ${supabase.auth.session()?.access_token || ""}`,
+                    },
+                    body: JSON.stringify({
+                      audio: base64Audio,
+                      section: currentSection,
+                    }),
+                  });
 
-                  if (supabaseError) {
-                    console.error('Supabase function invocation error:', supabaseError);
-                    transcriptionService.reportError(`Connection error: ${supabaseError.message}`);
-                    throw supabaseError;
+                  if (!response.ok) {
+                    const errorText = await response.text();
+                    throw new Error(`Function returned error ${response.status}: ${errorText}`);
                   }
+
+                  const data = await response.json();
+                  console.log('Edge function response:', data);
 
                   if (data?.transcription) {
                     console.log('Received transcription:', data.transcription);
@@ -95,10 +98,11 @@ export const useAudioRecorder = () => {
                   }
 
                   if (data?.error) {
+                    console.error('Edge function reported error:', data.error);
                     transcriptionService.reportError(data.error);
                   }
                 } catch (err: any) {
-                  console.error('Supabase function call error:', err);
+                  console.error('Error calling edge function:', err);
                   transcriptionService.reportError(`Failed to call edge function: ${err.message || 'Unknown error'}`);
                 }
                 
