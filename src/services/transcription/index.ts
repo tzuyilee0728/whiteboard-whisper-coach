@@ -1,5 +1,5 @@
 
 export * from './types';
-export * from './audioUtils';
-export * from './webSpeechService';
+export * from './audioProcessor';
+export * from './websocketService';
 export * from './transcriptionService';
