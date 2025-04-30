@@ -47,6 +47,15 @@ const AudioRecorder = () => {
     }
   };
   
+  // Start recording when session begins
+  useEffect(() => {
+    if (currentSession && !isRecording && !isPaused) {
+      startRecording().catch(err => {
+        console.error("Failed to automatically start recording:", err);
+      });
+    }
+  }, [currentSession, isRecording, isPaused]);
+  
   // Show error if microphone access is denied
   useEffect(() => {
     if (error) {

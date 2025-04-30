@@ -18,7 +18,7 @@ serve(async (req) => {
   }
 
   try {
-    const { audio, section } = await req.json()
+    const { audio, section, sessionContext, isQuestion } = await req.json()
     
     if (!audio) {
       throw new Error('No audio data provided')
@@ -56,53 +56,102 @@ serve(async (req) => {
     const transcription = transcriptionResult.text
     console.log("Transcription received:", transcription)
 
-    // Only proceed with feedback if we have a transcription
+    // Only proceed with AI response if we have a transcription and it's marked as a question
     if (transcription && transcription.trim()) {
-      // Generate feedback based on the transcription
-      const feedbackPrompt = `
-        The user is practicing a whiteboard design interview. They are in the "${section}" section.
-        Based on the following transcription of what they said, provide brief, constructive feedback
-        on their approach and communication. Keep it focused on improving their interview performance.
-        
-        Transcription: "${transcription}"
-        
-        Provide your feedback in 2-3 sentences maximum.
-      `
+      // Determine if this is a question that needs immediate response
+      if (isQuestion) {
+        // Generate an immediate conversational response
+        const conversationPrompt = `
+          You are an interviewer for a whiteboard design interview. The candidate is currently in the "${section}" section of their interview.
+          ${sessionContext ? `Context about this session: ${sessionContext}` : ''}
+          
+          The candidate just said or asked: "${transcription}"
+          
+          Please respond naturally as if you are the interviewer in the session. Be concise but helpful, and stay in character as an interviewer.
+          Your response should be conversational and direct, as if you're speaking to the candidate.
+        `
 
-      // Get feedback from OpenAI
-      const feedbackResponse = await fetch("https://api.openai.com/v1/chat/completions", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "Authorization": `Bearer ${OPENAI_API_KEY}`
-        },
-        body: JSON.stringify({
-          model: "gpt-4o-mini",
-          messages: [
-            { role: "system", content: "You are a helpful design interview coach providing concise feedback." },
-            { role: "user", content: feedbackPrompt }
-          ],
-          max_tokens: 150,
-          temperature: 0.7
+        // Get response from OpenAI
+        const responseData = await fetch("https://api.openai.com/v1/chat/completions", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "Authorization": `Bearer ${OPENAI_API_KEY}`
+          },
+          body: JSON.stringify({
+            model: "gpt-4o-mini",
+            messages: [
+              { role: "system", content: "You are a helpful design interview coach providing concise, conversational responses." },
+              { role: "user", content: conversationPrompt }
+            ],
+            temperature: 0.7,
+            max_tokens: 150
+          })
         })
-      })
-      
-      if (!feedbackResponse.ok) {
-        const errorText = await feedbackResponse.text()
-        console.error(`OpenAI feedback API error: ${errorText}`)
-        throw new Error(`OpenAI feedback API error: ${feedbackResponse.status}`)
+        
+        if (!responseData.ok) {
+          const errorText = await responseData.text()
+          console.error(`OpenAI response API error: ${errorText}`)
+          throw new Error(`OpenAI response API error: ${responseData.status}`)
+        }
+        
+        const aiResponse = await responseData.json()
+        const response = aiResponse.choices[0].message.content
+        console.log("AI response generated:", response)
+        
+        return new Response(JSON.stringify({ 
+          transcription, 
+          aiResponse: response 
+        }), {
+          headers: { ...corsHeaders, "Content-Type": "application/json" }
+        })
+      } else {
+        // Generate analytical feedback for user's statement
+        const feedbackPrompt = `
+          The user is practicing a whiteboard design interview. They are in the "${section}" section.
+          Based on the following transcription of what they said, provide brief, constructive feedback
+          on their approach and communication. Keep it focused on improving their interview performance.
+          
+          Transcription: "${transcription}"
+          
+          Provide your feedback in 2-3 sentences maximum.
+        `
+
+        // Get feedback from OpenAI
+        const feedbackResponse = await fetch("https://api.openai.com/v1/chat/completions", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "Authorization": `Bearer ${OPENAI_API_KEY}`
+          },
+          body: JSON.stringify({
+            model: "gpt-4o-mini",
+            messages: [
+              { role: "system", content: "You are a helpful design interview coach providing concise feedback." },
+              { role: "user", content: feedbackPrompt }
+            ],
+            max_tokens: 150,
+            temperature: 0.7
+          })
+        })
+        
+        if (!feedbackResponse.ok) {
+          const errorText = await feedbackResponse.text()
+          console.error(`OpenAI feedback API error: ${errorText}`)
+          throw new Error(`OpenAI feedback API error: ${feedbackResponse.status}`)
+        }
+        
+        const feedbackResult = await feedbackResponse.json()
+        const feedback = feedbackResult.choices[0].message.content
+        console.log("Feedback received:", feedback)
+        
+        return new Response(JSON.stringify({ 
+          transcription, 
+          feedback 
+        }), {
+          headers: { ...corsHeaders, "Content-Type": "application/json" }
+        })
       }
-      
-      const feedbackResult = await feedbackResponse.json()
-      const feedback = feedbackResult.choices[0].message.content
-      console.log("Feedback received:", feedback)
-      
-      return new Response(JSON.stringify({ 
-        transcription, 
-        feedback 
-      }), {
-        headers: { ...corsHeaders, "Content-Type": "application/json" }
-      })
     } else {
       // If no transcription, just return the empty transcription
       return new Response(JSON.stringify({ 

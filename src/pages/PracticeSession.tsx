@@ -62,7 +62,7 @@ const PracticeSession = () => {
                 handleNextSection={handleNextSection}
                 totalTime={totalTime}
                 initialTime={initialTotalTime}
-                hideRecorder={true} // Hide the recorder component
+                hideRecorder={false} // Show the recorder component
               />
               
               <SessionContent />
@@ -80,4 +80,3 @@ const PracticeSession = () => {
 };
 
 export default PracticeSession;
-

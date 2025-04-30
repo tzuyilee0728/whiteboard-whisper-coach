@@ -10,6 +10,7 @@ export const useAudioRecorder = () => {
   const [error, setError] = useState<string | null>(null);
   const [permissionRequesting, setPermissionRequesting] = useState(false);
   const audioChunksRef = useRef<Blob[]>([]);
+  const processingRef = useRef(false);
   const { isRecording, setIsRecording, currentSession, updateRecordingTime, currentSection } = useSession();
   
   const requestMicrophonePermission = async () => {
@@ -35,14 +36,19 @@ export const useAudioRecorder = () => {
         if (e.data.size > 0) {
           audioChunksRef.current.push(e.data);
           
-          if (isRecording && currentSession) {
+          if (isRecording && currentSession && !processingRef.current) {
+            // Set processing flag to prevent multiple API calls at once
+            processingRef.current = true;
+            
             try {
               const base64Audio = await blobToBase64(e.data);
               
               const { data, error } = await supabase.functions.invoke('transcribe-and-analyze', {
                 body: JSON.stringify({
                   audio: base64Audio,
-                  section: currentSection
+                  section: currentSection,
+                  sessionContext: transcriptionService.getCurrentTranscript(),
+                  isQuestion: false
                 })
               });
 
@@ -60,8 +66,15 @@ export const useAudioRecorder = () => {
                 console.log('Received feedback:', data.feedback);
                 transcriptionService.updateFeedback(data.feedback);
               }
+
+              if (data?.aiResponse) {
+                console.log('Received AI response:', data.aiResponse);
+                transcriptionService.updateAIResponse(data.aiResponse);
+              }
             } catch (err) {
               console.error('Transcription error:', err);
+            } finally {
+              processingRef.current = false;
             }
           }
         }
@@ -99,7 +112,7 @@ export const useAudioRecorder = () => {
     
     if (mediaRecorder && mediaRecorder.state !== 'recording') {
       audioChunksRef.current = [];
-      mediaRecorder.start(1000); // Capture audio every second
+      mediaRecorder.start(3000); // Capture audio every 3 seconds for real-time interaction
       setIsRecording(true);
       return true;
     }

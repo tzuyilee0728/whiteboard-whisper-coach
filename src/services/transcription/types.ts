@@ -49,3 +49,7 @@ export interface TranscriptUpdateCallback {
 export interface FeedbackCallback {
   (feedback: string): void;
 }
+
+export interface AIResponseCallback {
+  (response: string): void;
+}
