@@ -2,6 +2,8 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { TranscriptionService } from '../transcriptionService';
 import { WebSocketService } from '../websocketService';
+import { WebSpeechRecognition } from '../webSpeechRecognition';
+import { ApiTranscriptionService } from '../apiTranscriptionService';
 
 // Mock WebSocketService
 vi.mock('../websocketService', () => ({
@@ -20,6 +22,27 @@ vi.mock('../audioProcessor', () => ({
     startRecording: vi.fn().mockReturnValue(true),
     stopRecording: vi.fn().mockReturnValue(true),
     cleanup: vi.fn(),
+  })),
+}));
+
+// Mock WebSpeechRecognition
+vi.mock('../webSpeechRecognition', () => ({
+  WebSpeechRecognition: vi.fn().mockImplementation(() => ({
+    setTranscriptCallback: vi.fn(),
+    start: vi.fn().mockReturnValue(true),
+    stop: vi.fn().mockReturnValue(true),
+    reset: vi.fn(),
+    getCurrentTranscript: vi.fn().mockReturnValue(''),
+  })),
+}));
+
+// Mock ApiTranscriptionService
+vi.mock('../apiTranscriptionService', () => ({
+  ApiTranscriptionService: vi.fn().mockImplementation(() => ({
+    configure: vi.fn(),
+    setTranscriptCallback: vi.fn(),
+    processAudioChunk: vi.fn().mockResolvedValue(undefined),
+    clearQueue: vi.fn(),
   })),
 }));
 
@@ -78,7 +101,7 @@ describe('TranscriptionService', () => {
     const audioBlob = new Blob(['test audio'], { type: 'audio/webm' });
     await transcriptionService.processAudioChunk(audioBlob);
     
-    // Since we're just console logging in the method, we can just verify it doesn't throw
+    // Since we're mocking the API service, we can just verify it doesn't throw
     expect(true).toBe(true);
   });
 });

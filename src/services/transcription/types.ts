@@ -40,3 +40,12 @@ export interface SpeechRecognition extends EventTarget {
   onresult: ((event: SpeechRecognitionEvent) => void) | null;
   onerror: ((event: SpeechRecognitionEvent) => void) | null;
 }
+
+// Add callback interfaces for better type safety
+export interface TranscriptUpdateCallback {
+  (transcript: string): void;
+}
+
+export interface FeedbackCallback {
+  (feedback: string): void;
+}
