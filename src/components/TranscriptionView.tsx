@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect, useRef } from 'react';
-import { Mic, AlertTriangle } from 'lucide-react';
+import { Mic, AlertTriangle, Loader2 } from 'lucide-react';
 import { useSession } from '@/context/SessionContext';
 import { transcriptionService } from '@/services/transcription';
 
@@ -8,7 +8,17 @@ const TranscriptionView = () => {
   const { isRecording, currentSession, currentSection, isPaused } = useSession();
   const [transcription, setTranscription] = useState<string>('');
   const [feedback, setFeedback] = useState<string[]>([]);
+  const [isInitializing, setIsInitializing] = useState(false);
   const transcriptionRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    // Check if session just started and initialize
+    if (currentSession && isRecording && !isPaused) {
+      setIsInitializing(true);
+      // Initialize is handled in useSessionManager, just set a timeout to remove the initializing state
+      setTimeout(() => setIsInitializing(false), 2000);
+    }
+  }, [currentSession, isRecording, isPaused]);
 
   useEffect(() => {
     // Subscribe to transcription updates
@@ -52,7 +62,13 @@ const TranscriptionView = () => {
       </div>
       
       <div className="flex-grow overflow-auto" ref={transcriptionRef}>
-        {(isRecording || transcription || feedback.length > 0) ? (
+        {isInitializing ? (
+          <div className="h-full flex flex-col items-center justify-center text-center">
+            <Loader2 className="h-10 w-10 mb-4 text-brand-600 animate-spin" />
+            <p className="text-gray-600">Initializing transcription...</p>
+            <p className="text-sm text-gray-500 mt-1">Please speak clearly when recording starts</p>
+          </div>
+        ) : (isRecording || transcription || feedback.length > 0) ? (
           <div className="space-y-4">
             <div className="border-b pb-2 mb-2">
               <p className="text-sm font-medium">Transcription:</p>

@@ -3,7 +3,7 @@ import { useCallback } from 'react';
 import { Category, Challenge, AudioRecording, WhiteboardSection } from '@/types';
 import { generateSessionFeedback } from '@/context/sessionUtils';
 import { toast } from 'sonner';
-import { transcriptionService } from '@/services/transcription'; // Updated import path
+import { transcriptionService } from '@/services/transcription';
 import { aiAnalysisService } from '@/services/aiAnalysisService';
 
 export const useSessionManager = (state: ReturnType<typeof import('./useSessionState').useSessionState>) => {
@@ -58,7 +58,13 @@ export const useSessionManager = (state: ReturnType<typeof import('./useSessionS
     state.setCurrentSection('problem_discovery');
     state.setRecordingTime(0);
     state.setIsPaused(false);
-    state.setIsRecording(true);
+    state.setIsRecording(true); // This will trigger automatic recording
+    
+    // Request microphone permission and start transcription service
+    transcriptionService.start().catch(err => {
+      console.error("Failed to start transcription service", err);
+      toast.error("Failed to start audio recording. Please check your microphone permissions.");
+    });
     
     toast.success("Session started!");
   }, [state, generateRandomChallenge]);

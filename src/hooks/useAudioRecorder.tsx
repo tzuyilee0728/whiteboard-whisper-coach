@@ -1,3 +1,4 @@
+
 import { useState, useRef, useEffect } from 'react';
 import { useSession } from '@/context/SessionContext';
 import { transcriptionService } from '@/services/transcription';
@@ -7,17 +8,21 @@ export const useAudioRecorder = () => {
   const [audioStream, setAudioStream] = useState<MediaStream | null>(null);
   const [mediaRecorder, setMediaRecorder] = useState<MediaRecorder | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [permissionRequesting, setPermissionRequesting] = useState(false);
   const audioChunksRef = useRef<Blob[]>([]);
   const { isRecording, setIsRecording, currentSession, updateRecordingTime, currentSection } = useSession();
   
   const requestMicrophonePermission = async () => {
     try {
+      setPermissionRequesting(true);
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
       setAudioStream(stream);
       setError(null);
+      setPermissionRequesting(false);
       return stream;
     } catch (err) {
       setError('Microphone permission denied. Please allow microphone access.');
+      setPermissionRequesting(false);
       return null;
     }
   };
@@ -89,14 +94,16 @@ export const useAudioRecorder = () => {
   const startRecording = async () => {
     if (!audioStream) {
       const stream = await requestMicrophonePermission();
-      if (!stream) return;
+      if (!stream) return false;
     }
     
     if (mediaRecorder && mediaRecorder.state !== 'recording') {
       audioChunksRef.current = [];
       mediaRecorder.start(1000); // Capture audio every second
       setIsRecording(true);
+      return true;
     }
+    return false;
   };
 
   const stopRecording = () => {
@@ -107,6 +114,14 @@ export const useAudioRecorder = () => {
     }
     return null;
   };
+
+  // Auto-start recording when session begins
+  useEffect(() => {
+    if (currentSession && isRecording && (!mediaRecorder || mediaRecorder.state !== 'recording')) {
+      console.log('Auto-starting recording because session has begun');
+      startRecording();
+    }
+  }, [currentSession, isRecording, mediaRecorder]);
 
   useEffect(() => {
     return () => {
@@ -132,6 +147,7 @@ export const useAudioRecorder = () => {
     stopRecording,
     isRecording,
     error,
+    permissionRequesting,
     getLatestAudioChunk,
     getAllAudioChunks,
     audioChunksRef

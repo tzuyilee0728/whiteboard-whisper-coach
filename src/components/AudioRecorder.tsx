@@ -3,7 +3,7 @@ import React, { useEffect } from 'react';
 import { useSession } from '@/context/SessionContext';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Mic, MicOff, Clock } from 'lucide-react';
+import { Mic, MicOff, Clock, Loader2 } from 'lucide-react';
 import { useAudioRecorder } from '@/hooks/useAudioRecorder';
 import { toast } from 'sonner';
 
@@ -19,7 +19,8 @@ const AudioRecorder = () => {
   const {
     startRecording,
     stopRecording,
-    error
+    error,
+    permissionRequesting
   } = useAudioRecorder();
   
   // Format recording time
@@ -38,8 +39,7 @@ const AudioRecorder = () => {
         handlePauseResumeSession();
       }
     } else {
-      const started = await startRecording();
-      console.log("Recording started:", started);
+      await startRecording();
       // If session is paused, resume it
       if (isPaused) {
         handlePauseResumeSession();
@@ -53,7 +53,7 @@ const AudioRecorder = () => {
       toast.error(error);
     }
   }, [error]);
-  
+
   return (
     <Card>
       <CardHeader className="pb-2">
@@ -67,7 +67,12 @@ const AudioRecorder = () => {
       <CardContent className="pt-0">
         <div className="flex flex-col items-center gap-3">
           <div className="text-center">
-            {isRecording ? (
+            {permissionRequesting ? (
+              <div className="flex items-center text-amber-600">
+                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                <span className="text-sm">Requesting microphone access...</span>
+              </div>
+            ) : isRecording ? (
               <div className="flex items-center">
                 <Clock className="h-4 w-4 mr-2" />
                 <span className="font-mono text-red-600 font-bold">{formatTime(recordingTime)}</span>
@@ -85,9 +90,14 @@ const AudioRecorder = () => {
             onClick={handleRecordingToggle}
             variant={isRecording ? "destructive" : "default"}
             className={`w-full ${!isRecording ? 'bg-brand-600 hover:bg-brand-700' : ''}`}
-            disabled={!currentSession}
+            disabled={!currentSession || permissionRequesting}
           >
-            {isRecording ? (
+            {permissionRequesting ? (
+              <>
+                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                Requesting Access...
+              </>
+            ) : isRecording ? (
               <>
                 <MicOff className="h-4 w-4 mr-2" />
                 Pause Recording
