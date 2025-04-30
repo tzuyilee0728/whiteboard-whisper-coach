@@ -11,6 +11,7 @@ export class TranscriptionService {
   private onFeedbackCallback: ((feedback: string) => void) | null = null;
   private isRecognitionActive: boolean = false;
   private apiConfig: TranscriptionAPIConfig | null = null;
+  private currentTranscript: string = '';
 
   constructor() {
     this.webSocketService = new WebSocketService();
@@ -33,6 +34,7 @@ export class TranscriptionService {
   }
 
   private handleTranscriptionUpdate(transcript: string) {
+    this.currentTranscript += transcript;
     if (this.onTranscriptUpdateCallback) {
       this.onTranscriptUpdateCallback(transcript);
     }
@@ -49,7 +51,7 @@ export class TranscriptionService {
     console.log('Transcription API configured');
   }
 
-  public async start(): boolean {
+  public async start(): Promise<boolean> {
     if (!await this.audioProcessor.initializeAudio()) {
       return false;
     }
@@ -69,9 +71,11 @@ export class TranscriptionService {
   public reset() {
     this.audioProcessor.cleanup();
     this.webSocketService.disconnect();
+    this.currentTranscript = '';
   }
 
-  private async processAudioChunk(audioChunk: Blob) {
+  // Made this public to fix the test error
+  public async processAudioChunk(audioChunk: Blob): Promise<void> {
     // Process and send audio chunk logic here
     console.log('Processing audio chunk:', audioChunk);
   }
@@ -97,6 +101,7 @@ export class TranscriptionService {
   }
 
   public updateTranscript(transcript: string) {
+    this.currentTranscript += transcript;
     if (this.onTranscriptUpdateCallback) {
       this.onTranscriptUpdateCallback(transcript);
     }
@@ -107,7 +112,12 @@ export class TranscriptionService {
       this.onFeedbackCallback(feedback);
     }
   }
+
+  // Added this method to fix the test error
+  public getCurrentTranscript(): string {
+    return this.currentTranscript;
+  }
 }
 
 // Create a singleton instance to be used throughout the app
-export const transcriptionService = new TranscrationService();
+export const transcriptionService = new TranscriptionService();
