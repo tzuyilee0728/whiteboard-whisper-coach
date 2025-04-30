@@ -1,8 +1,9 @@
+
 import { useCallback } from 'react';
 import { Category, Challenge, AudioRecording, WhiteboardSection } from '@/types';
 import { generateSessionFeedback } from '@/context/sessionUtils';
 import { toast } from 'sonner';
-import { transcriptionService } from '@/services/transcriptionService';
+import { transcriptionService } from '@/services/transcription'; // Updated import path
 import { aiAnalysisService } from '@/services/aiAnalysisService';
 
 export const useSessionManager = (state: ReturnType<typeof import('./useSessionState').useSessionState>) => {
